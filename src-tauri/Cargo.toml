@@ -1,0 +1,57 @@
+[package]
+name = "restio"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["Ambition Guru <abhishek@ambition.guru>"]
+license = "MIT"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "restio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# `tray-icon` enables the system-tray icon + menu (see src/tray.rs). Core Tauri
+# feature — no plugin/capability. On Linux it links libayatana-appindicator at
+# build time (install `libayatana-appindicator3-dev`).
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
+# Native file picker for binary / multipart-file body fields. We store only the
+# chosen path (read in Rust at send time) so file bytes never enter the shared
+# collections JSON (ARCHITECTURE.md §8).
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = [
+  "rustls-tls",
+  "charset",
+  "http2",
+  "gzip",
+  "brotli",
+  "deflate",
+  "multipart",
+] }
+thiserror = "2"
+# `fs` for async file reads when attaching binary / multipart-file bodies.
+tokio = { version = "1", features = ["rt", "fs"] }
+# Direct dep (also in reqwest's tree) for correct x-www-form-urlencoded encoding.
+url = "2"
+base64 = "0.22"
+# SQLite via rusqlite (Rust owns the DB — the frontend never runs SQL, so no
+# tauri-plugin-sql and no capability grant needed, like std::fs). `bundled`
+# compiles SQLite from source so there's no system-library dependency.
+# Pinned to 0.32: rusqlite 0.40's libsqlite3-sys 0.38.1 build script needs the
+# unstable `cfg_select!` (fails on stable rustc). 0.32 uses only stable APIs.
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread"] }
+

@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+/* ── Design tokens (grounded in the ui-ux-pro-max "Modern Dark" system) ── */
+@theme {
+  --color-canvas: #0b1120; /* deepest backdrop */
+  --color-bg: #0f172a; /* app background */
+  --color-panel: #121a2e; /* raised panels */
+  --color-panel-2: #1a2338; /* inputs, hover surfaces */
+  --color-line: #22304c; /* hairline borders */
+  --color-line-strong: #334155; /* stronger dividers */
+
+  --color-ink: #f1f5f9; /* primary text */
+  --color-ink-muted: #94a3b8; /* secondary text */
+  --color-ink-faint: #64748b; /* tertiary text */
+
+  --color-brand: #22c55e; /* accent — the "run/send" green */
+  --color-brand-strong: #16a34a;
+  --color-danger: #ef4444;
+  --color-warn: #f59e0b;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Dense sub-`sm` type scale for a data-tool UI. Named by pixel size for an
+   * unambiguous ladder below Tailwind's defaults (xs = 12px, sm = 14px). These
+   * generate `text-9` … `text-13`; 12px maps to the built-in `text-xs`. */
+  --text-9: 0.5625rem; /* 9px  — micro labels, DEP pills */
+  --text-10: 0.625rem; /* 10px — method glyphs, uppercase eyebrows */
+  --text-11: 0.6875rem; /* 11px — secondary/status text */
+  --text-13: 0.8125rem; /* 13px — dense body / grid inputs (absorbs 12.5px) */
+
+  /* Sidebar drop-indicator: a brand top-line drawn inside the row (no layout
+   * shift). Generates the `shadow-drop-indicator` utility. */
+  --shadow-drop-indicator: inset 0 2px 0 0 var(--color-brand);
+}
+
+/* ── Base ── */
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(34, 197, 94, 0.06), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(56, 189, 248, 0.05), transparent 55%),
+    var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden; /* the app owns its own scroll regions */
+}
+
+/*
+ * Interactive-element cursors. Tailwind v4's Preflight resets buttons to
+ * `cursor: default`, so enabled controls otherwise show an arrow. Restore the
+ * pointer for every clickable element in one place — no per-element class
+ * needed (ui-ux-pro-max: `cursor-pointer` on all clickable elements).
+ */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+label[for],
+summary,
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* Thin, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #45566f;
+  background-clip: content-box;
+}
+
+::selection {
+  background: rgba(34, 197, 94, 0.28);
+}
+
+/* Consistent, visible focus for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/*
+ * In dialogs and modals, replace coarse offset outlines with a crisp,
+ * border-like inset outline on buttons and interactive controls.
+ * Inset placement (-1px) ensures borders are never clipped by container
+ * overflow or dialog edges, matching the visual weight of input focus borders.
+ */
+[role="dialog"] button:focus-visible,
+[role="dialog"] [role="button"]:focus-visible,
+[role="dialog"] a:focus-visible,
+[role="dialog"] select:focus-visible,
+[role="dialog"] summary:focus-visible,
+[role="dialog"] input[type="checkbox"]:focus-visible,
+[role="dialog"] input[type="radio"]:focus-visible,
+[role="dialog"] [tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 1.5px solid var(--color-brand) !important;
+  outline-offset: -1px !important;
+  border-color: var(--color-brand) !important;
+}
+
+/* Text inputs and textareas use their own border/inset focus effects without outline */
+[role="dialog"] input:not([type="checkbox"]):not([type="radio"]):focus,
+[role="dialog"] input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+[role="dialog"] textarea:focus,
+[role="dialog"] textarea:focus-visible {
+  outline: none !important;
+}
+
+/* Suppress outlines on mouse-click focus */
+[role="dialog"] :focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/*
+ * Dense key/value grid inputs (request params/headers, environment variables)
+ * render their OWN inset focus ring so the highlight stays inside the cell.
+ * Suppress the global offset outline on them — it would draw outside the field
+ * and collide with the column dividers / neighboring rows. This rule is
+ * unlayered so it beats the (also unlayered) `:focus-visible` rule above;
+ * Tailwind's `focus:outline-none` can't, since utilities live in @layer.
+ */
+.grid-input:focus,
+.grid-input:focus-visible {
+  outline: none;
+  border-radius: 0;
+}
+
+/*
+ * The URL bar is a bordered wrapper (read-only prefix segment + editable path);
+ * the wrapper shows the focus affordance via `focus-within`, so suppress the
+ * inner input's own global outline (same reasoning as `.grid-input` above).
+ */
+.bare-input:focus,
+.bare-input:focus-visible {
+  outline: none;
+}
+
+/* ── Named utilities (replace one-off arbitrary Tailwind values) ──────────── */
+
+/* Z-index layers above the default scale (dropdowns z-30, base modals z-50). */
+@utility z-nested {
+  z-index: 60; /* a modal opened from within another modal */
+}
+@utility z-overlay {
+  z-index: 70; /* app-level overlay (keyboard-shortcuts help) */
+}
+@utility z-toast {
+  z-index: 100; /* toasts — above every surface */
+}
+
+/* Key/value editor grid templates (checkbox · key · value · delete, etc.). */
+@utility grid-kv {
+  grid-template-columns: 1.75rem 1fr 1.4fr 2rem;
+}
+@utility grid-multipart {
+  grid-template-columns: 1.75rem 1fr 4rem 1.5fr 2rem;
+}
+@utility grid-split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+/* Modal / field sizing. */
+@utility h-modal {
+  height: 34rem;
+}
+@utility h-modal-sm {
+  height: 32rem;
+}
+@utility max-h-modal {
+  max-height: 85vh;
+}
+@utility min-h-editor {
+  min-height: 200px;
+}
+@utility min-h-field {
+  min-height: 132px;
+}
+@utility max-w-toast {
+  max-width: calc(100vw - 2rem);
+}
+@utility max-w-prefix {
+  max-width: 45%; /* read-only base/prefix segment in the URL bar */
+}
+@utility max-w-tab {
+  max-width: 12rem; /* a single request tab in the tab strip */
+}
+
+/*
+ * Modal entrance. Applies to every dialog + its backdrop in one place (all
+ * modals share the role="dialog" panel + role="presentation" backdrop pattern),
+ * so no per-component transition wiring is needed. Plays once on mount; internal
+ * reactive updates don't restart a CSS animation. Menus (role="menu") and toasts
+ * are unaffected. The reduced-motion block below neutralizes it.
+ */
+[role="presentation"] {
+  animation: backdrop-in 140ms ease-out;
+}
+[role="dialog"] {
+  animation: panel-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

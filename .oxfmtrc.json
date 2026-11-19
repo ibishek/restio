@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "build",
+    ".svelte-kit",
+    "src-tauri/target",
+    "static",
+    ".agents",
+    "pnpm-lock.yaml"
+  ]
+}
