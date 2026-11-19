@@ -10,6 +10,7 @@ work with you.
 
 <br/>
 
+[![CodeQL](https://github.com/ibishek/restio/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/ibishek/restio/actions/workflows/github-code-scanning/codeql)
 ![Tauri](https://img.shields.io/badge/Tauri-2.12-24C8DB?logo=tauri&logoColor=white)
 ![Svelte](https://img.shields.io/badge/Svelte-5.58-FF3E00?logo=svelte&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)
