@@ -29,7 +29,7 @@
     Users,
     X,
     Zap,
-  } from "@lucid/svelte";
+  } from "@lucide/svelte";
   import type { Component } from "svelte";
 
   export type IconName =
