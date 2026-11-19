@@ -1,0 +1,23 @@
+version: 2
+updates:
+  # Rust / Cargo dependencies in src-tauri
+  - package-ecosystem: "cargo"
+    directory: "/src-tauri"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Upstream Tauri v2 Linux stack relies on gtk-rs 0.18, which strictly pins
+      # glib to ^0.18. glib 0.20+ is a breaking upgrade incompatible with gtk 0.18.
+      - dependency-name: "glib"
+
+  # Frontend dependencies (npm / pnpm)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # GitHub Actions workflow updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
