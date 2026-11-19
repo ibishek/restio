@@ -139,7 +139,15 @@ const sh = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`; // shell sing
 const js = (s: string): string => JSON.stringify(s); // JS / Python / Swift / Go / Java / C#
 const php = (s: string): string => `'${s.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 // Dart & Kotlin double-quoted strings interpolate `$…`, so escape it.
-const dollar = (s: string): string => js(s).replace(/\$/g, "\\$");
+// Backslashes are escaped first to satisfy CodeQL's complete string escaping rule.
+const dollar = (s: string): string =>
+  `"${s
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\$/g, "\\$")
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n")
+    .replace(/\t/g, "\\t")}"`;
 // Ruby single-quoted literal (avoids `#{}` interpolation entirely).
 const rb = (s: string): string => `'${s.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 
