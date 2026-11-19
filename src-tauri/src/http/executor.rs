@@ -56,6 +56,10 @@ pub async fn execute(
         .timeout(timeout)
         .user_agent(concat!("RestIO/", env!("CARGO_PKG_VERSION")));
 
+    // Intentional (CWE-295 / rust/disabled-certificate-check): RestIO is an API
+    // client tool (like Postman / curl). Users need the ability to test localhost
+    // and staging endpoints using self-signed TLS certificates. This setting defaults
+    // to `false` and is strictly opt-in per request via UI toggle.
     if req.danger_accept_invalid_certs {
         client_builder = client_builder.danger_accept_invalid_certs(true);
     }
