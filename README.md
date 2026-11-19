@@ -2,8 +2,6 @@
 
 # ⚡ RestIO
 
-<img width="1983" height="793" alt="restio-banner" src="https://github.com/user-attachments/assets/75604844-a8d5-4100-bb72-eb8703622279" />
-
 **A fast, shareable REST API client for your desktop.**
 
 Compose, send, and organize HTTP requests — then share entire collections
@@ -20,6 +18,8 @@ work with you.
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 </div>
+
+<img width="1983" height="793" alt="restio-banner" src="https://github.com/user-attachments/assets/0ef70b89-4db5-4717-ba22-777e340d3849" />
 
 ---
 
