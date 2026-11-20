@@ -31,8 +31,9 @@
     "verify:all": "pnpm verify && pnpm lint:rust && pnpm test:rust",
     "version:check": "node scripts/sync-version.mjs --check",
     "version:set": "node scripts/sync-version.mjs",
+    "prepare": "svelte-kit sync",
     "docs:dev": "pnpm --filter restio-docs dev",
-    "docs:build": "pnpm --filter restio-docs build",
+    "docs:build": "svelte-kit sync && pnpm --filter restio-docs build",
     "docs:preview": "pnpm --filter restio-docs preview"
   },
   "dependencies": {
