@@ -1,0 +1,70 @@
+name: "CI Quality Gate"
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: "Lint, Typecheck & Test"
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify version synchronization
+        run: pnpm version:check
+
+      - name: Frontend format check
+        run: pnpm format:check
+
+      - name: Frontend lint
+        run: pnpm lint
+
+      - name: SvelteKit typecheck
+        run: pnpm check
+
+      - name: Frontend unit tests
+        run: pnpm test
+
+      - name: Rust format check
+        run: pnpm fmt:rust:check
+
+      - name: Rust clippy lint
+        run: pnpm lint:rust
+
+      - name: Rust unit tests
+        run: pnpm test:rust
+
+      - name: Frontend production build
+        run: pnpm build
