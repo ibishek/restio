@@ -1,0 +1,68 @@
+---
+title: RestIO Documentation
+description: A fast, shareable REST API client for your desktop.
+template: splash
+hero:
+  tagline: A fast, shareable REST API client for your desktop. Native Rust HTTP engine, Git-backed team collections, sandboxed JavaScript tests, and zero CORS limits.
+  image:
+    file: ../../assets/logo.png
+  actions:
+    - text: Get Started
+      link: /getting-started/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: Scripting API Reference
+      link: /reference/rio-api/
+      icon: document
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/ibishek/restio
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Why RestIO?
+
+<CardGrid stagger>
+  <Card title="Full-Power Native HTTP" icon="rocket">
+    Requests execute in a high-performance **Rust engine (`reqwest`)**, not a browser sandbox. Send
+    any header, hit any host or local port, and cancel in-flight requests instantly without CORS
+    constraints.
+  </Card>
+  <Card title="Git-Backed Team Sharing" icon="open-book">
+    Collaborate on API collections using pure Git repositories. Branch, review, commit, and sync API
+    specs across teams without vendor lock-in or leaking local secrets.
+  </Card>
+  <Card title="Pre & Post Scripting Runtime" icon="pencil">
+    Automate token extraction and assertions with the built-in `rio.*` JavaScript runtime.
+    Compatible with Postman scripts (`pm.*`), Chai-style assertions, and dynamic Faker mock data.
+  </Card>
+  <Card title="Automated Collection Runner" icon="random">
+    Run entire folders or collections sequentially. Chain variables between requests, configure
+    delay and iteration loops, and export comprehensive test reports.
+  </Card>
+  <Card title="OpenAPI & Postman Interchange" icon="setting">
+    Seamless two-way import and export for OpenAPI 3.0, 3.1, Swagger 2.0 (YAML/JSON) with automatic
+    schema synthesis, as well as Postman v2.1 collections.
+  </Card>
+  <Card title="Command Palette & Quick Navigation" icon="laptop">
+    Press `⌘K` or `Ctrl+K` for global Spotlight-style navigation. Filter commands, switch
+    environments, search historical requests, and navigate without lifting your hands from the
+    keyboard.
+  </Card>
+</CardGrid>
+
+---
+
+## Quick Navigation
+
+| What you want to do                                   | Recommended Guide                                    |
+| :---------------------------------------------------- | :--------------------------------------------------- |
+| Install RestIO on your OS                             | [Installation Guide](/getting-started/installation/) |
+| Send your first request & inspect resolved URL        | [Quickstart](/getting-started/quickstart/)           |
+| Learn how to set up environments & variables          | [Environments & Variables](/core/environments/)      |
+| Share collections with teammates via Git              | [Git-Backed Sharing](/collaboration/git-sync/)       |
+| Write automated test assertions & pre-request scripts | [Scripting Runtime](/testing/scripting/)             |
+| Look up all available `rio.*` methods                 | [Scripting API Reference](/reference/rio-api/)       |

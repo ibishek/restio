@@ -30,7 +30,10 @@
     "verify": "pnpm format:check && pnpm lint && pnpm fmt:rust:check && pnpm check && pnpm test",
     "verify:all": "pnpm verify && pnpm lint:rust && pnpm test:rust",
     "version:check": "node scripts/sync-version.mjs --check",
-    "version:set": "node scripts/sync-version.mjs"
+    "version:set": "node scripts/sync-version.mjs",
+    "docs:dev": "pnpm --filter restio-docs dev",
+    "docs:build": "pnpm --filter restio-docs build",
+    "docs:preview": "pnpm --filter restio-docs preview"
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
