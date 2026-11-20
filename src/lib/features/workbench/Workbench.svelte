@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { browser } from "$app/env";
   import Icon from "#lib/components/ui/Icon.svelte";
   import Toaster from "#lib/components/ui/Toaster.svelte";
@@ -50,9 +50,18 @@
         // ignore
       }
     }
+
+    // Let the UI paint the initial frame first before initiating IPC calls
+    await tick();
+
     try {
       await initWorkbench();
-      void initUpdater();
+      // Defer non-critical network checks (e.g. updater) after initial paint and disk IPC
+      if (browser) {
+        setTimeout(() => {
+          void initUpdater();
+        }, 1200);
+      }
     } catch (err) {
       console.error("Failed to initialize workbench:", err);
     }

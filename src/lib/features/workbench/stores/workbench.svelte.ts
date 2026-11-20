@@ -126,42 +126,52 @@ export function applyActiveEnv(envId: string | undefined): void {
 
 /** Load collections from disk on startup; seed + persist on first run. */
 export async function initWorkbench(): Promise<void> {
-  try {
-    const loaded = await loadCollections();
-    if (loaded && loaded.length) wb.collections = normalizeCollections(loaded);
-    else await persist();
-  } catch {
-    // Not running under Tauri (e.g. `pnpm dev` in a browser) — keep the
-    // in-memory seed so the UI still works for pure front-end development.
-  }
-  try {
-    const envs = await loadEnvironments();
-    if (envs && envs.length) {
-      wb.environments = envs;
-      if (!wb.environments.some((e) => e.id === wb.activeEnvId)) {
-        wb.activeEnvId = wb.environments[0]?.id ?? null;
+  await Promise.allSettled([
+    (async () => {
+      try {
+        const loaded = await loadCollections();
+        if (loaded && loaded.length) wb.collections = normalizeCollections(loaded);
+        else await persist();
+      } catch {
+        // Not running under Tauri (e.g. `pnpm dev` in a browser) — keep the
+        // in-memory seed so the UI still works for pure front-end development.
       }
-    } else {
-      await persistEnvironments();
-    }
-  } catch {
-    // Outside Tauri — keep the seeded environments.
-  }
-  try {
-    const hist = await loadHistory();
-    if (hist) wb.history = hist;
-  } catch {
-    // Outside Tauri — start with an empty history.
-  }
-  try {
-    wb.workspaces = await listWorkspaces();
-    const active = await ipcActiveWorkspace();
-    wb.activeWorkspaceId = active?.id ?? null;
-    applyActiveEnv(active?.activeEnvId);
-    wb.members = await workspaceMembers();
-  } catch {
-    // Outside Tauri — no workspaces; keep the in-memory defaults.
-  }
+    })(),
+    (async () => {
+      try {
+        const envs = await loadEnvironments();
+        if (envs && envs.length) {
+          wb.environments = envs;
+          if (!wb.environments.some((e) => e.id === wb.activeEnvId)) {
+            wb.activeEnvId = wb.environments[0]?.id ?? null;
+          }
+        } else {
+          await persistEnvironments();
+        }
+      } catch {
+        // Outside Tauri — keep the seeded environments.
+      }
+    })(),
+    (async () => {
+      try {
+        const hist = await loadHistory();
+        if (hist) wb.history = hist;
+      } catch {
+        // Outside Tauri — start with an empty history.
+      }
+    })(),
+    (async () => {
+      try {
+        wb.workspaces = await listWorkspaces();
+        const active = await ipcActiveWorkspace();
+        wb.activeWorkspaceId = active?.id ?? null;
+        applyActiveEnv(active?.activeEnvId);
+        wb.members = await workspaceMembers();
+      } catch {
+        // Outside Tauri — no workspaces; keep the in-memory defaults.
+      }
+    })(),
+  ]);
   for (const c of wb.collections) if (!(c.id in wb.expanded)) wb.expanded[c.id] = true;
 }
 
