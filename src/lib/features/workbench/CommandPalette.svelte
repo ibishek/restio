@@ -25,6 +25,7 @@
     toggleSidebar,
     wb,
   } from "./state.svelte";
+  import { manualCheckForUpdates } from "./stores/updater.svelte";
 
   let {
     onOpenEnvEditor,
@@ -234,6 +235,15 @@
         shortcut: ["?"],
         keywords: ["help", "shortcuts", "keys", "hotkeys"],
         action: () => onOpenShortcuts?.(),
+      },
+      {
+        id: "cmd-check-updates",
+        category: "commands",
+        title: "Check for updates",
+        subtitle: "Check GitHub for new RestIO releases",
+        icon: "download",
+        keywords: ["update", "version", "upgrade", "check", "releases"],
+        action: () => void manualCheckForUpdates(),
       },
     );
 

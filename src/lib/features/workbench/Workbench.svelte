@@ -40,6 +40,7 @@
     requestSearchFocus,
     statusTone,
   } from "./state.svelte";
+  import { initUpdater, updater, openReleasePage } from "./stores/updater.svelte";
   import { humanBytes, humanMs } from "#lib/utils/format";
 
   onMount(async () => {
@@ -58,6 +59,7 @@
     }
     try {
       await initWorkbench();
+      void initUpdater();
     } catch (err) {
       console.error("Failed to initialize workbench:", err);
     }
@@ -282,6 +284,23 @@
         height="28"
       />
       <span class="text-sm font-semibold tracking-tight">RestIO</span>
+      {#if updater.updateAvailable && updater.latestVersion}
+        <button
+          onclick={openReleasePage}
+          title="New version v{updater.latestVersion} available! Click to view release."
+          class="flex items-center gap-1.5 rounded-full bg-brand/15 px-2 py-0.5 font-medium text-10 text-brand transition-colors hover:bg-brand/25"
+        >
+          <span class="size-1.5 animate-pulse rounded-full bg-brand"></span>
+          <span>v{updater.latestVersion} available</span>
+        </button>
+      {:else}
+        <span
+          title="RestIO v{updater.currentVersion}"
+          class="rounded bg-panel-2 px-1.5 py-0.5 font-mono text-10 text-ink-faint select-none"
+        >
+          v{updater.currentVersion}
+        </span>
+      {/if}
     </div>
 
     <span class="mx-1 h-5 w-px bg-line"></span>

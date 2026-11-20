@@ -14,6 +14,7 @@
   "rules": {
     "no-console": "off",
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-underscore-dangle": "off",
     "import/no-unassigned-import": "off"
   },
   "ignorePatterns": ["build", ".svelte-kit", "src-tauri/target", "node_modules", "static"]

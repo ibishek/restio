@@ -55,9 +55,13 @@ pnpm lint               # oxlint over the frontend
 pnpm lint:fix           # oxlint --fix
 pnpm fmt:rust           # cargo fmt (src-tauri)
 pnpm lint:rust          # cargo clippy -D warnings (compiles — slow first run)
+pnpm test:rust          # cargo test (src-tauri)
 pnpm format:all         # oxfmt + cargo fmt
 pnpm lint:all           # oxlint + clippy
-pnpm verify             # format:check + lint + fmt:rust:check + svelte-check (fast gate)
+pnpm verify             # format:check + lint + fmt:rust:check + svelte-check + test (fast gate)
+pnpm verify:all         # verify + lint:rust (clippy) + test:rust (full gate)
+pnpm version:check      # verify versions across package.json, tauri.conf.json, Cargo.toml
+pnpm version:set 0.2.0  # synchronize new version across all 3 config files
 ```
 
 Coverage & gotchas:

@@ -1,5 +1,6 @@
 // Public surface of the IPC contract layer (ARCHITECTURE.md §5).
 export { call } from "./client";
+export { getAppVersion } from "./app";
 export { pickFile, pickDirectory, pickSaveFile } from "./dialog";
 export { openFile, openExternalUrl } from "./opener";
 export { sendRequest, cancelRequest } from "./requests";
