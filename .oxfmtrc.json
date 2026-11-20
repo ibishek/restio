@@ -6,6 +6,8 @@
     "src-tauri/target",
     "static",
     ".agents",
-    "pnpm-lock.yaml"
+    "pnpm-lock.yaml",
+    "docs/dist",
+    "docs/.astro"
   ]
 }

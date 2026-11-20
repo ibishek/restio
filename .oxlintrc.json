@@ -17,5 +17,5 @@
     "no-underscore-dangle": "off",
     "import/no-unassigned-import": "off"
   },
-  "ignorePatterns": ["build", ".svelte-kit", "src-tauri/target", "node_modules", "static"]
+  "ignorePatterns": ["build", ".svelte-kit", "src-tauri/target", "node_modules", "static", "docs"]
 }
