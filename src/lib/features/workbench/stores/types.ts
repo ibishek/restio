@@ -23,7 +23,7 @@ export interface RequestLocation {
 }
 
 export type ReqTab = "params" | "headers" | "body" | "auth" | "scripts" | "settings";
-export type ResTab = "body" | "headers" | "tests";
+export type ResTab = "body" | "headers" | "timing" | "tests";
 
 /** One open request tab. Everything that used to be a single "open document"
  *  now lives per-tab, so requests (and their in-flight sends) are independent. */

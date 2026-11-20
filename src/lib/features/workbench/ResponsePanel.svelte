@@ -6,6 +6,8 @@
   import type { HttpResponse, SavedResponse } from "#lib/types";
   import { extForContentType, humanBytes, saveFiltersForContentType } from "#lib/utils/format";
   import { highlightJson } from "#lib/utils/highlight";
+  import ServerTimingViewer from "./ServerTimingViewer.svelte";
+  import { summarizeServerTiming } from "#lib/utils/serverTiming";
   import {
     activeTab,
     deleteSavedResponse,
@@ -54,15 +56,21 @@
     activeExample ?? tab.response,
   );
 
+  const timingSummary = $derived.by(() =>
+    summarizeServerTiming(currentResponse?.headers, currentResponse?.timeMs ?? 0),
+  );
+
   const tabs = $derived<{ id: ResTab; label: string }[]>(
     isViewingExample
       ? [
           { id: "body", label: "Body" },
           { id: "headers", label: "Headers" },
+          { id: "timing", label: "Timing" },
         ]
       : [
           { id: "body", label: "Body" },
           { id: "headers", label: "Headers" },
+          { id: "timing", label: "Timing" },
           { id: "tests", label: "Test Results" },
         ],
   );
@@ -562,6 +570,10 @@
             <span class="rounded-full bg-panel-2 px-1.5 text-10 font-medium tabular-nums text-ink-muted">
               {headerEntries.length}
             </span>
+          {:else if rt.id === "timing" && timingSummary.hasTimings}
+            <span class="rounded-full bg-sky-500/15 px-1.5 text-10 font-medium tabular-nums text-sky-400">
+              {timingSummary.metrics.length}
+            </span>
           {:else if rt.id === "tests" && !isViewingExample && tab.testResults.length > 0}
             {@const passed = tab.testResults.filter((t) => t.passed).length}
             {@const total = tab.testResults.length}
@@ -770,6 +782,11 @@
             </div>
           </div>
         </div>
+      {:else if tab.resTab === "timing"}
+        <ServerTimingViewer
+          headers={currentResponse.headers}
+          clientRoundTripMs={currentResponse.timeMs}
+        />
       {:else if tab.resTab === "tests"}
         {#if isViewingExample}
           <div class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
