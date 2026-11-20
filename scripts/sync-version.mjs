@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 
+const dotVersionPath = path.join(rootDir, ".version");
 const pkgPath = path.join(rootDir, "package.json");
 const cargoPath = path.join(rootDir, "src-tauri/Cargo.toml");
 const tauriConfPath = path.join(rootDir, "src-tauri/tauri.conf.json");
@@ -11,12 +12,16 @@ const tauriConfPath = path.join(rootDir, "src-tauri/tauri.conf.json");
 const targetVersion = process.argv[2];
 
 function readVersions() {
+  const dotVersion = fs.existsSync(dotVersionPath)
+    ? fs.readFileSync(dotVersionPath, "utf8").trim()
+    : null;
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
   const tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, "utf8"));
   const cargo = fs.readFileSync(cargoPath, "utf8");
   const cargoMatch = cargo.match(/^\[package\][\s\S]*?^version\s*=\s*"([^"]+)"/m);
 
   return {
+    dotVersion,
     packageJson: pkg.version,
     tauriConf: tauriConf.version,
     cargoToml: cargoMatch ? cargoMatch[1] : null,
@@ -26,12 +31,17 @@ function readVersions() {
 if (!targetVersion || targetVersion === "--check") {
   const versions = readVersions();
   console.log(`Current versions:
+  .version:                ${versions.dotVersion}
   package.json:            ${versions.packageJson}
   src-tauri/tauri.conf.json: ${versions.tauriConf}
   src-tauri/Cargo.toml:    ${versions.cargoToml}
 `);
 
-  if (versions.packageJson === versions.tauriConf && versions.packageJson === versions.cargoToml) {
+  if (
+    versions.dotVersion === versions.packageJson &&
+    versions.packageJson === versions.tauriConf &&
+    versions.packageJson === versions.cargoToml
+  ) {
     console.log(`✓ All versions are synchronized (${versions.packageJson}).`);
     process.exit(0);
   } else {
@@ -49,17 +59,20 @@ if (!semverRegex.test(targetVersion)) {
 
 console.log(`Updating version to: ${targetVersion}`);
 
-// 1. package.json
+// 1. .version
+fs.writeFileSync(dotVersionPath, `${targetVersion}\n`);
+
+// 2. package.json
 const pkgText = fs.readFileSync(pkgPath, "utf8");
 const updatedPkg = pkgText.replace(/"version":\s*"[^"]+"/, `"version": "${targetVersion}"`);
 fs.writeFileSync(pkgPath, updatedPkg);
 
-// 2. tauri.conf.json
+// 3. tauri.conf.json
 const tauriText = fs.readFileSync(tauriConfPath, "utf8");
 const updatedTauri = tauriText.replace(/"version":\s*"[^"]+"/, `"version": "${targetVersion}"`);
 fs.writeFileSync(tauriConfPath, updatedTauri);
 
-// 3. Cargo.toml
+// 4. Cargo.toml
 const cargoText = fs.readFileSync(cargoPath, "utf8");
 const updatedCargo = cargoText.replace(
   /^(\[package\][\s\S]*?^version\s*=\s*)"[^"]+"/m,
@@ -68,5 +81,5 @@ const updatedCargo = cargoText.replace(
 fs.writeFileSync(cargoPath, updatedCargo);
 
 console.log(
-  "✓ Successfully synchronized versions in package.json, tauri.conf.json, and Cargo.toml.",
+  "✓ Successfully synchronized versions in .version, package.json, tauri.conf.json, and Cargo.toml.",
 );
