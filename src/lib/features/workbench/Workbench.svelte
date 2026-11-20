@@ -7,15 +7,8 @@
   import Sidebar from "./Sidebar.svelte";
   import RequestPanel from "./RequestPanel.svelte";
   import ResponsePanel from "./ResponsePanel.svelte";
-  import ContainerEditor from "./ContainerEditor.svelte";
-  import EnvironmentEditor from "./EnvironmentEditor.svelte";
-  import WorkspaceManager from "./WorkspaceManager.svelte";
-  import ShortcutsOverlay from "./ShortcutsOverlay.svelte";
   import TabStrip from "./TabStrip.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
-  import CollectionRunnerDialog from "./CollectionRunnerDialog.svelte";
-  import CommandPalette from "./CommandPalette.svelte";
-  import { ShareDialog } from "#lib/features/sharing";
   import {
     wb,
     runnerState,
@@ -517,7 +510,9 @@
           </button>
         </div>
       {:else if tab.kind === "container"}
-        <ContainerEditor />
+        {#await import("./ContainerEditor.svelte") then { default: ContainerEditor }}
+          <ContainerEditor />
+        {/await}
       {:else}
         <div bind:this={splitContainer} class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div style="flex: 0 0 {splitPercent}%;" class="flex min-h-0 min-w-0 flex-col overflow-hidden">
@@ -607,17 +602,46 @@
   </footer>
 </div>
 
-<EnvironmentEditor bind:open={editorOpen} />
-<WorkspaceManager bind:open={wsManagerOpen} />
-<ShareDialog bind:open={shareOpen} onSynced={afterSync} />
-<ShortcutsOverlay bind:open={shortcutsOpen} />
-<CollectionRunnerDialog />
-<CommandPalette
-  onOpenEnvEditor={() => (editorOpen = true)}
-  onOpenWsManager={() => (wsManagerOpen = true)}
-  onOpenShare={() => (shareOpen = true)}
-  onOpenShortcuts={() => (shortcutsOpen = true)}
-/>
+{#if editorOpen}
+  {#await import("./EnvironmentEditor.svelte") then { default: EnvironmentEditor }}
+    <EnvironmentEditor bind:open={editorOpen} />
+  {/await}
+{/if}
+
+{#if wsManagerOpen}
+  {#await import("./WorkspaceManager.svelte") then { default: WorkspaceManager }}
+    <WorkspaceManager bind:open={wsManagerOpen} />
+  {/await}
+{/if}
+
+{#if shareOpen}
+  {#await import("#lib/features/sharing/ShareDialog.svelte") then { default: ShareDialog }}
+    <ShareDialog bind:open={shareOpen} onSynced={afterSync} />
+  {/await}
+{/if}
+
+{#if shortcutsOpen}
+  {#await import("./ShortcutsOverlay.svelte") then { default: ShortcutsOverlay }}
+    <ShortcutsOverlay bind:open={shortcutsOpen} />
+  {/await}
+{/if}
+
+{#if runnerState.open}
+  {#await import("./CollectionRunnerDialog.svelte") then { default: CollectionRunnerDialog }}
+    <CollectionRunnerDialog />
+  {/await}
+{/if}
+
+{#if paletteState.open}
+  {#await import("./CommandPalette.svelte") then { default: CommandPalette }}
+    <CommandPalette
+      onOpenEnvEditor={() => (editorOpen = true)}
+      onOpenWsManager={() => (wsManagerOpen = true)}
+      onOpenShare={() => (shareOpen = true)}
+      onOpenShortcuts={() => (shortcutsOpen = true)}
+    />
+  {/await}
+{/if}
 {#if isDraggingSplit}
   <div class="fixed inset-0 z-overlay cursor-row-resize select-none"></div>
 {/if}

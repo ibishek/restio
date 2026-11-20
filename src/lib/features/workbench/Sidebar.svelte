@@ -1,7 +1,5 @@
 <script lang="ts">
   import Icon from "#lib/components/ui/Icon.svelte";
-  import PostmanDialog from "./PostmanDialog.svelte";
-  import OpenApiDialog from "./OpenApiDialog.svelte";
   import type { Collection, Folder, HttpRequest } from "#lib/types";
   import {
     wb,
@@ -465,8 +463,17 @@
   {/if}
 </aside>
 
-<PostmanDialog bind:open={postmanOpen} mode={postmanMode} collection={postmanCollection} />
-<OpenApiDialog bind:open={openApiOpen} mode={openApiMode} collection={openApiCollection} />
+{#if postmanOpen}
+  {#await import("./PostmanDialog.svelte") then { default: PostmanDialog }}
+    <PostmanDialog bind:open={postmanOpen} mode={postmanMode} collection={postmanCollection} />
+  {/await}
+{/if}
+
+{#if openApiOpen}
+  {#await import("./OpenApiDialog.svelte") then { default: OpenApiDialog }}
+    <OpenApiDialog bind:open={openApiOpen} mode={openApiMode} collection={openApiCollection} />
+  {/await}
+{/if}
 
 <!-- A collection or folder node (recursive). -->
 {#snippet container(node: Collection | Folder, loc: RequestLocation, isCollection: boolean, depth: number)}
