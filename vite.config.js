@@ -1,4 +1,3 @@
-// @ts-expect-error nodejs builtin without @types/node
 import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
@@ -8,7 +7,6 @@ import adapter from "@sveltejs/adapter-static";
 
 const appVersion = readFileSync(".version", "utf8").trim();
 
-// @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
