@@ -130,7 +130,7 @@ rio.test("Latency is within threshold", function () {
 
 ## Where to Go Next
 
-- Learn how [Workspaces & Collections](/core/workspaces-collections/) organize complex projects.
-- Understand the unrestricted [Rust HTTP Engine](/core/http-engine/).
-- Sync your team's collections with [Git-Backed Sharing](/collaboration/git-sync/).
-- Explore advanced test automation and mock data with [Scripting Runtime](/testing/scripting/).
+- Learn how [Workspaces & Collections](/restio/core/workspaces-collections/) organize complex projects.
+- Understand the unrestricted [Rust HTTP Engine](/restio/core/http-engine/).
+- Sync your team's collections with [Git-Backed Sharing](/restio/collaboration/git-sync/).
+- Explore advanced test automation and mock data with [Scripting Runtime](/restio/testing/scripting/).

@@ -85,7 +85,7 @@ Hover your cursor over any `{{variable_name}}` pill inside the editor to view a 
 
 ## Dynamic Runtime Variables
 
-In addition to static environment configurations, variables can be created or updated programmatically during execution using the [Scripting API](/testing/scripting/):
+In addition to static environment configurations, variables can be created or updated programmatically during execution using the [Scripting API](/restio/testing/scripting/):
 
 ```javascript
 // Pre-request: generate a dynamic timestamp
