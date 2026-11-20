@@ -53,6 +53,11 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify versions & quality gate
+        run: |
+          pnpm version:check
+          pnpm verify
+
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v1
         env:
