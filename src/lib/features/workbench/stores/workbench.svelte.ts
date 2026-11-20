@@ -26,36 +26,24 @@ function seed(): Collection[] {
   return [
     {
       id: uid(),
-      name: "GitHub API",
+      name: "RestIO",
       baseUrl: "https://api.github.com",
-      folders: [
-        {
-          id: uid(),
-          name: "Repositories",
-          urlPrefix: "/repos/tauri-apps/tauri",
-          folders: [],
-          requests: [
-            makeRequest("Get repository", "GET", "", {
-              headers: [kv("Accept", "application/vnd.github+json")],
-            }),
-            makeRequest("List issues", "GET", "issues"),
-          ],
-        },
-      ],
-      requests: [makeRequest("Search repos", "GET", "search/repositories?q=tauri")],
-    },
-    {
-      id: uid(),
-      name: "Demo (httpbin)",
-      baseUrl: "",
       folders: [],
       requests: [
-        makeRequest("GET with query", "GET", "https://httpbin.org/get"),
-        makeRequest("POST JSON", "POST", "https://httpbin.org/post", {
-          bodyMode: "json",
-          body: '{\n  "hello": "world"\n}',
+        makeRequest("Get repo", "GET", "https://api.github.com/repos/ibishek/restio", {
+          headers: [kv("Accept", "application/vnd.github+json")],
         }),
-        makeRequest("Status 404", "GET", "https://httpbin.org/status/404"),
+        makeRequest(
+          "Recent commits",
+          "GET",
+          "https://api.github.com/repos/ibishek/restio/commits",
+          {
+            headers: [kv("Accept", "application/vnd.github+json")],
+          },
+        ),
+        makeRequest("Issues", "GET", "https://api.github.com/repos/ibishek/restio/issues", {
+          headers: [kv("Accept", "application/vnd.github+json")],
+        }),
       ],
     },
   ];
