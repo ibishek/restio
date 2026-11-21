@@ -35,7 +35,7 @@ RestIO provides a sandboxed JavaScript runtime that executes scripts before an o
 Pre-request scripts run before RestIO builds the outgoing HTTP packet. Use pre-request scripts to:
 
 - Compute dynamic hashes, HMAC signatures, or timestamps.
-- Generate mock data payloads using the built-in [Faker library](/testing/mock-data/).
+- Generate mock data payloads using the built-in [Faker library](/restio/testing/mock-data/).
 - Set or modify variables via `rio.setEnv()`.
 - Mutate the outgoing request body dynamically via `rio.request.body = ...`.
 

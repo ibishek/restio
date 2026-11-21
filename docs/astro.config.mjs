@@ -4,7 +4,8 @@ import starlight from "@astrojs/starlight";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://restio.dev",
+  site: "https://ibishek.github.io",
+  base: "/restio",
   integrations: [
     starlight({
       title: "RestIO",

@@ -65,5 +65,5 @@ Most API clients today fall into two traps:
 
 ## Next Steps
 
-- Ready to install RestIO? Head to the [Installation Guide](/getting-started/installation/).
-- Want to send your first request? Jump right into the [Quickstart Guide](/getting-started/quickstart/).
+- Ready to install RestIO? Head to the [Installation Guide](/restio/getting-started/installation/).
+- Want to send your first request? Jump right into the [Quickstart Guide](/restio/getting-started/quickstart/).

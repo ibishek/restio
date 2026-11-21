@@ -90,7 +90,7 @@ Common headers (such as `Accept: application/json` or `X-Organization-ID`) defin
 
 Right-clicking any collection or folder in the sidebar unlocks rich context actions:
 
-- **Run Collection / Folder**: Launches the [Automated Collection Runner](/testing/collection-runner/).
+- **Run Collection / Folder**: Launches the [Automated Collection Runner](/restio/testing/collection-runner/).
 - **Export OpenAPI**: Exports the hierarchy to standard OpenAPI 3.1 YAML or JSON.
 - **Export Postman**: Exports to Postman Collection v2.1 format.
 - **Git Sync / Share**: Publishes or pulls updates from a remote Git repository.
