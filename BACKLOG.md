@@ -9,7 +9,7 @@ This document outlines the planned feature backlog, architectural considerations
 | Priority | Feature Area                                     | Primary Impact                      | Target Milestone |
 | :------: | :----------------------------------------------- | :---------------------------------- | :--------------: |
 |  **P1**  | **Server-Sent Events (SSE) & LLM Stream Viewer** | AI/LLM developer adoption           |   ✅ Completed   |
-|  **P1**  | **Automatic Cookie Jar & Session Persistence**   | Frictionless auth workflows         |      v0.2.x      |
+|  **P1**  | **Automatic Cookie Jar & Session Persistence**   | Frictionless auth workflows         |   ✅ Completed   |
 |  **P2**  | **Headless CLI Test Runner (`restio run`)**      | CI/CD integration & automation      |      v0.3.0      |
 |  **P2**  | **WebSocket Client (`ws://`, `wss://`)**         | Real-time & event-driven APIs       |      v0.3.0      |
 |  **P2**  | **GraphQL Explorer & Schema Introspection**      | Broadened protocol support          |      v0.3.0      |
@@ -39,7 +39,7 @@ This document outlines the planned feature backlog, architectural considerations
 
 ### 2. Automatic Cookie Jar & Session Manager
 
-- [ ] **Status:** Backlog
+- [x] **Status:** Completed
 - **Motivation:** APIs that rely on `Set-Cookie` session tokens require tedious manual header extraction.
 - **Architecture:**
   - **Rust Backend:** Wire `reqwest::cookie::Jar` into the client builder; persist cookies per-workspace in SQLite (`store/db.rs`).

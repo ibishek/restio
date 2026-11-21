@@ -38,6 +38,8 @@ Type a prefix at the start of the search input to filter items by category:
 | **Run active collection**         | Launches the collection test runner                                                             | <kbd>⌘R</kbd> / <kbd>Ctrl+R</kbd>         |
 | **Import OpenAPI / Postman**      | Opens the specification import modal                                                            | <kbd>⌘O</kbd> / <kbd>Ctrl+O</kbd>         |
 | **Export collection as OpenAPI**  | Exports the active collection as OpenAPI 3.1 JSON                                               |                                           |
+| **Manage cookies**                | Opens the Cookie Jar & Session Manager dialog                                                   |                                           |
+| **Clear all workspace cookies**   | Purges all stored cookies across all domains for the active workspace                           |                                           |
 
 ---
 

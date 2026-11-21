@@ -100,8 +100,9 @@ RestIO provides 4 authentication modes in the **Auth** tab:
 
 Fine-tune protocol-level parameters for individual requests:
 
-| Setting                              | Type      | Description                                                                                                                                                          |
-| :----------------------------------- | :-------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Dangerously Accept Invalid Certs** | `Boolean` | When enabled, skips TLS certificate verification. Essential for developing against local microservices (`https://localhost:8443`) with self-signed SSL certificates. |
-| **Custom Timeout (`timeoutMs`)**     | `Number`  | Overrides the default 30-second timeout. Set to `60000` (60s) for slow operations or `0` for indefinite waiting.                                                     |
-| **Mark as Deprecated**               | `Boolean` | Adds an advisory strike-through badge to the endpoint in the sidebar to warn teammates not to build new features against it.                                         |
+| Setting                                        | Type      | Description                                                                                                                                                                             |
+| :--------------------------------------------- | :-------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Automatic Cookie Jar & Session Persistence** | `Boolean` | When enabled (default), automatically attaches matching stored cookies to outbound requests and captures response `Set-Cookie` headers. Toggle off for pure stateless endpoint testing. |
+| **Dangerously Accept Invalid Certs**           | `Boolean` | When enabled, skips TLS certificate verification. Essential for developing against local microservices (`https://localhost:8443`) with self-signed SSL certificates.                    |
+| **Custom Timeout (`timeoutMs`)**               | `Number`  | Overrides the default 30-second timeout. Set to `60000` (60s) for slow operations or `0` for indefinite waiting.                                                                        |
+| **Mark as Deprecated**                         | `Boolean` | Adds an advisory strike-through badge to the endpoint in the sidebar to warn teammates not to build new features against it.                                                            |
