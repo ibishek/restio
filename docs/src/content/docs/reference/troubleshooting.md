@@ -85,4 +85,4 @@ On Windows 10/11, RestIO requires Microsoft Edge WebView2.
 
 ### Can I run tests in CI/CD pipelines?
 
-A standalone headless CLI test runner (`restio run`) is currently in active development on the [Product Roadmap](/restio/reference/roadmap/). You can also export collections to Postman format and run them with `newman`.
+A standalone headless CLI test runner (`restio run`) is currently planned on the backlog of the [Product Roadmap](/restio/reference/roadmap/). You can also export collections to Postman format and run them with `newman`.
