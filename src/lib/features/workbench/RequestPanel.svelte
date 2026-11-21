@@ -1,6 +1,5 @@
 <script lang="ts">
   import Icon from "#lib/components/ui/Icon.svelte";
-  import CodeDialog from "./CodeDialog.svelte";
   import AuthEditor from "./AuthEditor.svelte";
   import VarInput from "./VarInput.svelte";
   import { pickFile } from "#lib/ipc";
@@ -890,7 +889,11 @@ rio.setEnv("fakePhone", faker.phone.number());
   {/if}
 </section>
 
-<CodeDialog bind:open={codeOpen} />
+{#if codeOpen}
+  {#await import("./CodeDialog.svelte") then { default: CodeDialog }}
+    <CodeDialog bind:open={codeOpen} />
+  {/await}
+{/if}
 
 {#snippet keyValueEditor(list: KeyValue[], label: string, suggest = false, onChange?: () => void)}
   <div class="overflow-hidden rounded-lg border border-line">

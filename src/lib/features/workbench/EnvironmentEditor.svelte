@@ -11,7 +11,6 @@
     deleteEnvironment,
     saveEnvironmentVars,
   } from "./state.svelte";
-  import PostmanEnvDialog from "./PostmanEnvDialog.svelte";
 
   let { open = $bindable(false) }: { open?: boolean } = $props();
 
@@ -244,10 +243,14 @@
     </div>
   </div>
 
-  <PostmanEnvDialog
-    bind:open={pmOpen}
-    mode={pmMode}
-    env={editing}
-    onImported={(id) => (editingId = id)}
-  />
+  {#if pmOpen}
+    {#await import("./PostmanEnvDialog.svelte") then { default: PostmanEnvDialog }}
+      <PostmanEnvDialog
+        bind:open={pmOpen}
+        mode={pmMode}
+        env={editing}
+        onImported={(id) => (editingId = id)}
+      />
+    {/await}
+  {/if}
 {/if}
