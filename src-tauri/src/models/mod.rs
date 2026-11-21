@@ -157,3 +157,13 @@ pub struct HttpResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub saved_path: Option<String>,
 }
+
+/// A single streaming chunk emitted in real time to the frontend over a Tauri channel.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamChunk {
+    pub index: usize,
+    pub text: String,
+    pub elapsed_ms: u64,
+    pub bytes: usize,
+}

@@ -1,8 +1,9 @@
+use tauri::ipc::Channel;
 use tauri::Manager;
 
 use crate::error::AppError;
 use crate::http::executor;
-use crate::models::{HttpRequest, HttpResponse};
+use crate::models::{HttpRequest, HttpResponse, StreamChunk};
 use crate::state::RequestRegistry;
 
 /// Send the request the user composed and return the captured response.
@@ -14,9 +15,13 @@ pub async fn send_request(
     app: tauri::AppHandle,
     run_id: String,
     req: HttpRequest,
+    on_stream: Channel<StreamChunk>,
 ) -> Result<HttpResponse, AppError> {
     let app_clone = app.clone();
-    let task = tokio::spawn(async move { executor::execute(req, Some(&app_clone)).await });
+    let task =
+        tokio::spawn(
+            async move { executor::execute(req, Some(&app_clone), Some(on_stream)).await },
+        );
     app.state::<RequestRegistry>()
         .insert(run_id.clone(), task.abort_handle());
 

@@ -10,6 +10,7 @@
   import { mergeUrlWithParams, syncParamsFromUrl, uid } from "#lib/utils/query";
   import {
     activeTab,
+    addSseHeadersToActive,
     send,
     cancel,
     importCurl,
@@ -635,6 +636,18 @@ rio.setEnv("fakePhone", faker.phone.number());
     {#if tab.reqTab === "params"}
       {@render keyValueEditor(tab.request.params, "Query parameter", false, onParamsChange)}
     {:else if tab.reqTab === "headers"}
+      <div class="mb-2.5 flex items-center justify-between">
+        <span class="text-xs text-ink-muted">Request headers</span>
+        <button
+          type="button"
+          onclick={addSseHeadersToActive}
+          class="flex items-center gap-1.5 rounded-md border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-ink transition-colors hover:border-line-strong hover:bg-panel-3 active:scale-95"
+          title="Add Accept: text/event-stream & Cache-Control: no-cache"
+        >
+          <Icon name="zap" size={13} class="text-amber-400" />
+          <span>Add SSE Preset</span>
+        </button>
+      </div>
       {@render keyValueEditor(tab.request.headers, "Header", true)}
     {:else if tab.reqTab === "body"}
       <div class="space-y-3">

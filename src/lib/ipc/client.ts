@@ -1,6 +1,8 @@
 // The ONE place `invoke` from @tauri-apps is imported (ARCHITECTURE.md §5).
 // Everything else calls the typed wrappers in this folder.
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
+
+export { Channel };
 
 /** Invoke a Rust command, normalizing any failure into an `Error`. */
 export async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {

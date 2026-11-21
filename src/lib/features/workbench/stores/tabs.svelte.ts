@@ -11,6 +11,7 @@ import {
   replaceRequestById,
 } from "./collections.svelte";
 import {
+  kv,
   makeRequest,
   makeTab,
   normalizeRequest,
@@ -224,6 +225,76 @@ export function saveCurrentRequest(): boolean {
 /** Open a fresh, unsaved blank request in a new tab (⌘N / the "+" button). */
 export function newRequest(): void {
   newTab();
+}
+
+/** Open a fresh SSE streaming request in a new tab. */
+export function newSseRequest(): void {
+  const req = makeRequest("New SSE stream", "GET", "", {
+    headers: [kv("Accept", "text/event-stream"), kv("Cache-Control", "no-cache")],
+  });
+  const tab = makeTab(req, null);
+  wb.tabs.push(tab);
+  wb.activeTabId = tab.id;
+  toast.success("Created SSE request", "Accept: text/event-stream added");
+}
+
+/** Injects SSE streaming headers into the active tab's request. */
+export function addSseHeadersToActive(): void {
+  const t = activeTab();
+  if (!t || t.kind !== "request") {
+    toast.warn("No active request to configure");
+    return;
+  }
+
+  // Set or update Accept: text/event-stream
+  const accept = t.request.headers.find((h) => h.key.trim().toLowerCase() === "accept");
+  if (accept) {
+    accept.value = "text/event-stream";
+    accept.enabled = true;
+  } else {
+    const last = t.request.headers[t.request.headers.length - 1];
+    if (last && !last.key && !last.value) {
+      t.request.headers.splice(t.request.headers.length - 1, 0, {
+        id: uid(),
+        key: "Accept",
+        value: "text/event-stream",
+        enabled: true,
+      });
+    } else {
+      t.request.headers.push({
+        id: uid(),
+        key: "Accept",
+        value: "text/event-stream",
+        enabled: true,
+      });
+    }
+  }
+
+  // Ensure Cache-Control: no-cache
+  const cache = t.request.headers.find((h) => h.key.trim().toLowerCase() === "cache-control");
+  if (cache) {
+    cache.enabled = true;
+  } else {
+    const last = t.request.headers[t.request.headers.length - 1];
+    if (last && !last.key && !last.value) {
+      t.request.headers.splice(t.request.headers.length - 1, 0, {
+        id: uid(),
+        key: "Cache-Control",
+        value: "no-cache",
+        enabled: true,
+      });
+    } else {
+      t.request.headers.push({
+        id: uid(),
+        key: "Cache-Control",
+        value: "no-cache",
+        enabled: true,
+      });
+    }
+  }
+
+  t.reqTab = "headers";
+  toast.success("SSE headers configured", "Accept: text/event-stream set");
 }
 
 /** Delete a request, prompting first when an open tab for it has unsaved changes. */
