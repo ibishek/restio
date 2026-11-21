@@ -21,7 +21,7 @@ use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
 use crate::error::AppError;
-use crate::models::Workspace;
+use crate::models::{Cookie, Workspace};
 use crate::store;
 
 const DB_FILE: &str = "restio.db";
@@ -439,6 +439,185 @@ impl Db {
         Ok(())
     }
 
+    // ── cookies (scoped per workspace) ───────────────────────────────────────
+
+    fn row_to_cookie(row: &rusqlite::Row) -> Result<Cookie, rusqlite::Error> {
+        Ok(Cookie {
+            id: row.get(0)?,
+            workspace_id: row.get(1)?,
+            domain: row.get(2)?,
+            path: row.get(3)?,
+            name: row.get(4)?,
+            value: row.get(5)?,
+            http_only: row.get::<_, i64>(6)? != 0,
+            secure: row.get::<_, i64>(7)? != 0,
+            same_site: row.get(8)?,
+            expires: row.get(9)?,
+            max_age: row.get(10)?,
+            created_at: row.get(11)?,
+        })
+    }
+
+    /// List all cookies stored for a workspace, optionally filtered by domain.
+    pub fn list_cookies(
+        &self,
+        workspace_id: &str,
+        domain: Option<&str>,
+    ) -> Result<Vec<Cookie>, AppError> {
+        let conn = self.0.lock().unwrap();
+        let query = if domain.is_some() {
+            "SELECT id, workspace_id, domain, path, name, value, http_only, secure, same_site, expires, max_age, created_at
+             FROM cookies WHERE workspace_id = ?1 AND domain = ?2 ORDER BY domain, path, name"
+        } else {
+            "SELECT id, workspace_id, domain, path, name, value, http_only, secure, same_site, expires, max_age, created_at
+             FROM cookies WHERE workspace_id = ?1 ORDER BY domain, path, name"
+        };
+        let mut stmt = conn.prepare(query).map_err(storage)?;
+        let rows = if let Some(d) = domain {
+            stmt.query_map(params![workspace_id, d], Self::row_to_cookie)
+        } else {
+            stmt.query_map(params![workspace_id], Self::row_to_cookie)
+        }
+        .map_err(storage)?;
+
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r.map_err(storage)?);
+        }
+        Ok(out)
+    }
+
+    /// Upsert a cookie for a workspace. Replaces value, flags, and expiration
+    /// if (workspace_id, domain, path, name) matches.
+    pub fn upsert_cookie(&self, cookie: &Cookie) -> Result<(), AppError> {
+        let conn = self.0.lock().unwrap();
+        conn.execute(
+            "INSERT INTO cookies(id, workspace_id, domain, path, name, value, http_only, secure, same_site, expires, max_age, created_at)
+             VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+             ON CONFLICT(workspace_id, domain, path, name) DO UPDATE SET
+                value = excluded.value,
+                http_only = excluded.http_only,
+                secure = excluded.secure,
+                same_site = excluded.same_site,
+                expires = excluded.expires,
+                max_age = excluded.max_age,
+                created_at = excluded.created_at",
+            params![
+                cookie.id,
+                cookie.workspace_id,
+                cookie.domain,
+                cookie.path,
+                cookie.name,
+                cookie.value,
+                cookie.http_only as i64,
+                cookie.secure as i64,
+                cookie.same_site,
+                cookie.expires,
+                cookie.max_age,
+                cookie.created_at,
+            ],
+        )
+        .map_err(storage)?;
+        Ok(())
+    }
+
+    /// Delete a single cookie by (workspace_id, domain, path, name).
+    pub fn delete_cookie(
+        &self,
+        workspace_id: &str,
+        domain: &str,
+        path: &str,
+        name: &str,
+    ) -> Result<(), AppError> {
+        let conn = self.0.lock().unwrap();
+        conn.execute(
+            "DELETE FROM cookies WHERE workspace_id = ?1 AND domain = ?2 AND path = ?3 AND name = ?4",
+            params![workspace_id, domain, path, name],
+        )
+        .map_err(storage)?;
+        Ok(())
+    }
+
+    /// Delete a single cookie by ID.
+    pub fn delete_cookie_by_id(&self, id: &str) -> Result<(), AppError> {
+        let conn = self.0.lock().unwrap();
+        conn.execute("DELETE FROM cookies WHERE id = ?1", params![id])
+            .map_err(storage)?;
+        Ok(())
+    }
+
+    /// Clear all cookies for a workspace, optionally restricted to a specific domain.
+    pub fn clear_cookies(&self, workspace_id: &str, domain: Option<&str>) -> Result<(), AppError> {
+        let conn = self.0.lock().unwrap();
+        if let Some(d) = domain {
+            conn.execute(
+                "DELETE FROM cookies WHERE workspace_id = ?1 AND domain = ?2",
+                params![workspace_id, d],
+            )
+        } else {
+            conn.execute(
+                "DELETE FROM cookies WHERE workspace_id = ?1",
+                params![workspace_id],
+            )
+        }
+        .map_err(storage)?;
+        Ok(())
+    }
+
+    /// Retrieve all unexpired cookies matching the given request host, path, and security.
+    pub fn get_cookies_for_request(
+        &self,
+        workspace_id: &str,
+        host: &str,
+        path: &str,
+        is_secure: bool,
+    ) -> Result<Vec<Cookie>, AppError> {
+        let candidates = crate::http::cookies::candidate_domains(host);
+        if candidates.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let now = crate::http::cookies::now_sec();
+        let conn = self.0.lock().unwrap();
+
+        let placeholders = (0..candidates.len())
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "SELECT id, workspace_id, domain, path, name, value, http_only, secure, same_site, expires, max_age, created_at
+             FROM cookies
+             WHERE workspace_id = ? AND (expires IS NULL OR expires >= ?) AND domain IN ({placeholders})
+             ORDER BY path DESC, created_at ASC"
+        );
+
+        let mut param_values: Vec<Box<dyn rusqlite::ToSql>> =
+            Vec::with_capacity(candidates.len() + 2);
+        param_values.push(Box::new(workspace_id.to_string()));
+        param_values.push(Box::new(now));
+        for c in &candidates {
+            param_values.push(Box::new(c.clone()));
+        }
+
+        let mut stmt = conn.prepare(&sql).map_err(storage)?;
+        let rows = stmt
+            .query_map(
+                rusqlite::params_from_iter(param_values.iter()),
+                Self::row_to_cookie,
+            )
+            .map_err(storage)?;
+
+        let mut matched = Vec::new();
+        for r in rows {
+            let cookie = r.map_err(storage)?;
+            if crate::http::cookies::matches_request(&cookie, host, path, is_secure, now) {
+                matched.push(cookie);
+            }
+        }
+
+        Ok(matched)
+    }
+
     /// Bootstrap a first workspace from any pre-workspace data, so there is
     /// always exactly one to fall back to. Idempotent.
     fn ensure_default_workspace(&self, app: &AppHandle) -> Result<(), AppError> {
@@ -522,7 +701,11 @@ fn default_collections_path(app: &AppHandle) -> Result<PathBuf, AppError> {
 
 fn init_schema(conn: &Connection) -> Result<(), AppError> {
     conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS settings (
+        "PRAGMA journal_mode = WAL;
+         PRAGMA synchronous = NORMAL;
+         PRAGMA temp_store = MEMORY;
+         PRAGMA mmap_size = 268435456;
+         CREATE TABLE IF NOT EXISTS settings (
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL
          );
@@ -541,7 +724,23 @@ fn init_schema(conn: &Connection) -> Result<(), AppError> {
             name             TEXT NOT NULL,
             collections_path TEXT NOT NULL,
             active_env_id    TEXT NOT NULL DEFAULT ''
-         );",
+         );
+         CREATE TABLE IF NOT EXISTS cookies (
+            id           TEXT PRIMARY KEY,
+            workspace_id TEXT NOT NULL,
+            domain       TEXT NOT NULL,
+            path         TEXT NOT NULL DEFAULT '/',
+            name         TEXT NOT NULL,
+            value        TEXT NOT NULL,
+            http_only    INTEGER NOT NULL DEFAULT 0,
+            secure       INTEGER NOT NULL DEFAULT 0,
+            same_site    TEXT NOT NULL DEFAULT '',
+            expires      INTEGER,
+            max_age      INTEGER,
+            created_at   INTEGER NOT NULL
+         );
+         CREATE INDEX IF NOT EXISTS cookies_ws_domain ON cookies(workspace_id, domain);
+         CREATE UNIQUE INDEX IF NOT EXISTS cookies_unique ON cookies(workspace_id, domain, path, name);",
     )
     .map_err(storage)
 }
@@ -632,5 +831,75 @@ mod tests {
         let hist = db.load_history().unwrap();
         let arr = hist.as_array().unwrap();
         assert_eq!(arr.len(), 0);
+    }
+
+    #[test]
+    fn cookie_crud_and_matching() {
+        let db = Db::open_in_memory();
+        let c1 = Cookie {
+            id: "c1".into(),
+            workspace_id: "ws-a".into(),
+            domain: "api.example.com".into(),
+            path: "/v1".into(),
+            name: "auth_token".into(),
+            value: "xyz123".into(),
+            http_only: true,
+            secure: true,
+            same_site: "Strict".into(),
+            expires: None,
+            max_age: None,
+            created_at: 1000,
+        };
+        let c2 = Cookie {
+            id: "c2".into(),
+            workspace_id: "ws-a".into(),
+            domain: "example.com".into(),
+            path: "/".into(),
+            name: "theme".into(),
+            value: "dark".into(),
+            http_only: false,
+            secure: false,
+            same_site: "Lax".into(),
+            expires: None,
+            max_age: None,
+            created_at: 1000,
+        };
+
+        // 1. Insert cookies
+        db.upsert_cookie(&c1).unwrap();
+        db.upsert_cookie(&c2).unwrap();
+
+        // 2. List all in ws-a
+        let cookies = db.list_cookies("ws-a", None).unwrap();
+        assert_eq!(cookies.len(), 2);
+
+        // 3. Filter by domain
+        let example_cookies = db.list_cookies("ws-a", Some("example.com")).unwrap();
+        assert_eq!(example_cookies.len(), 1);
+        assert_eq!(example_cookies[0].name, "theme");
+
+        // 4. Match request
+        let matched = db
+            .get_cookies_for_request("ws-a", "api.example.com", "/v1/users", true)
+            .unwrap();
+        assert_eq!(matched.len(), 2); // both match
+
+        // 5. Update cookie value on conflict
+        let mut c1_updated = c1.clone();
+        c1_updated.value = "new_token_456".into();
+        db.upsert_cookie(&c1_updated).unwrap();
+        let cookies_after = db.list_cookies("ws-a", Some("api.example.com")).unwrap();
+        assert_eq!(cookies_after.len(), 1);
+        assert_eq!(cookies_after[0].value, "new_token_456");
+
+        // 6. Delete cookie by id
+        db.delete_cookie_by_id(&c1.id).unwrap();
+        let cookies_after_delete = db.list_cookies("ws-a", None).unwrap();
+        assert_eq!(cookies_after_delete.len(), 1);
+        assert_eq!(cookies_after_delete[0].name, "theme");
+
+        // 7. Clear all cookies
+        db.clear_cookies("ws-a", None).unwrap();
+        assert_eq!(db.list_cookies("ws-a", None).unwrap().len(), 0);
     }
 }

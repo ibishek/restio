@@ -13,6 +13,7 @@
     wb,
     runnerState,
     paletteState,
+    cookieManagerState,
     openCommandPalette,
     closeCommandPalette,
     activeTab,
@@ -638,6 +639,12 @@
 {#if runnerState.open}
   {#await import("./CollectionRunnerDialog.svelte") then { default: CollectionRunnerDialog }}
     <CollectionRunnerDialog />
+  {/await}
+{/if}
+
+{#if cookieManagerState.open}
+  {#await import("./CookieManagerModal.svelte") then { default: CookieManagerModal }}
+    <CookieManagerModal bind:open={cookieManagerState.open} />
   {/await}
 {/if}
 

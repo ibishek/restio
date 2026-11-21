@@ -1,4 +1,5 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
+use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 use base64::Engine;
@@ -10,6 +11,53 @@ use super::auth;
 use crate::error::AppError;
 use crate::models::{HttpRequest, HttpResponse, StreamChunk};
 use tauri::ipc::Channel;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct ClientKey {
+    timeout_ms: u64,
+    danger_accept_invalid_certs: bool,
+}
+
+static CLIENT_POOL: LazyLock<Mutex<HashMap<ClientKey, Client>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Retrieve a cached `reqwest::Client` or build a new pooled client. Reusing
+/// clients retains TCP keep-alive connections and TLS sessions across requests.
+fn get_or_create_client(
+    timeout_ms: u64,
+    danger_accept_invalid_certs: bool,
+) -> Result<Client, AppError> {
+    let key = ClientKey {
+        timeout_ms,
+        danger_accept_invalid_certs,
+    };
+
+    let mut pool = CLIENT_POOL.lock().unwrap();
+    if let Some(client) = pool.get(&key) {
+        return Ok(client.clone());
+    }
+
+    let mut builder = Client::builder()
+        .timeout(Duration::from_millis(timeout_ms))
+        .tcp_keepalive(Some(Duration::from_secs(60)))
+        .pool_idle_timeout(Some(Duration::from_secs(90)))
+        .user_agent(concat!("RestIO/", env!("CARGO_PKG_VERSION")));
+
+    // Intentional (CWE-295 / rust/disabled-certificate-check): RestIO is an API
+    // client tool (like Postman / curl). Users need the ability to test localhost
+    // and staging endpoints using self-signed TLS certificates. This setting defaults
+    // to `false` and is strictly opt-in per request via UI toggle.
+    if danger_accept_invalid_certs {
+        builder = builder.danger_accept_invalid_certs(true);
+    }
+
+    let client = builder
+        .build()
+        .map_err(|e| AppError::Request(e.to_string()))?;
+
+    pool.insert(key, client.clone());
+    Ok(client)
+}
 
 /// Content types we return as base64 rather than lossy UTF-8, so binary bodies
 /// (images, PDFs, fonts, …) survive the trip and can be rendered in the UI.
@@ -53,27 +101,32 @@ pub async fn execute(
         }
     }
 
-    let timeout = Duration::from_millis(req.timeout_ms.unwrap_or(30_000));
-    let mut client_builder = Client::builder()
-        .timeout(timeout)
-        .user_agent(concat!("RestIO/", env!("CARGO_PKG_VERSION")));
+    let timeout_ms = req.timeout_ms.unwrap_or(30_000);
+    let client = get_or_create_client(timeout_ms, req.danger_accept_invalid_certs)?;
 
-    // Intentional (CWE-295 / rust/disabled-certificate-check): RestIO is an API
-    // client tool (like Postman / curl). Users need the ability to test localhost
-    // and staging endpoints using self-signed TLS certificates. This setting defaults
-    // to `false` and is strictly opt-in per request via UI toggle.
-    if req.danger_accept_invalid_certs {
-        client_builder = client_builder.danger_accept_invalid_certs(true);
-    }
+    let host = url.host_str().unwrap_or("localhost").to_string();
+    let path = url.path().to_string();
+    let is_secure = url.scheme() == "https";
 
-    let client = client_builder
-        .build()
-        .map_err(|e| AppError::Request(e.to_string()))?;
+    let ws_id = if let Some(app) = app {
+        use tauri::Manager;
+        if let Some(db) = app.try_state::<crate::store::db::Db>() {
+            db.active_workspace_id()
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| "default".to_string())
+        } else {
+            "default".to_string()
+        }
+    } else {
+        "default".to_string()
+    };
 
-    let mut builder = client.request(method, url);
+    let mut builder = client.request(method, url.clone());
 
     // Headers.
     let mut has_content_type = false;
+    let mut has_cookie = false;
     for h in &req.headers {
         if h.enabled && !h.key.is_empty() {
             let name = HeaderName::from_bytes(h.key.trim().as_bytes())
@@ -83,7 +136,27 @@ pub async fn execute(
             if name == CONTENT_TYPE {
                 has_content_type = true;
             }
+            if name == reqwest::header::COOKIE {
+                has_cookie = true;
+            }
             builder = builder.header(name, value);
+        }
+    }
+
+    // Attach matching cookies from SQLite cookie jar if enabled
+    if req.use_cookie_jar && !has_cookie {
+        if let Some(app) = app {
+            use tauri::Manager;
+            if let Some(db) = app.try_state::<crate::store::db::Db>() {
+                if let Ok(matched) = db.get_cookies_for_request(&ws_id, &host, &path, is_secure) {
+                    if !matched.is_empty() {
+                        let header_str = super::cookies::build_cookie_header(&matched);
+                        if let Ok(val) = HeaderValue::from_str(&header_str) {
+                            builder = builder.header(reqwest::header::COOKIE, val);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -176,6 +249,35 @@ pub async fn execute(
             name.as_str().to_string(),
             value.to_str().unwrap_or("").to_string(),
         );
+    }
+
+    // Capture Set-Cookie headers and update cookie jar if enabled
+    let mut response_cookies = Vec::new();
+    for cookie_header in resp.headers().get_all(reqwest::header::SET_COOKIE) {
+        if let Ok(raw_str) = cookie_header.to_str() {
+            if let Some((parsed_cookie, is_expired)) =
+                super::cookies::parse_set_cookie(raw_str, &url, &ws_id)
+            {
+                if req.use_cookie_jar {
+                    if let Some(app) = app {
+                        use tauri::Manager;
+                        if let Some(db) = app.try_state::<crate::store::db::Db>() {
+                            if is_expired {
+                                let _ = db.delete_cookie(
+                                    &ws_id,
+                                    &parsed_cookie.domain,
+                                    &parsed_cookie.path,
+                                    &parsed_cookie.name,
+                                );
+                            } else {
+                                let _ = db.upsert_cookie(&parsed_cookie);
+                            }
+                        }
+                    }
+                }
+                response_cookies.push(parsed_cookie);
+            }
+        }
     }
 
     let content_type = headers
@@ -306,6 +408,7 @@ pub async fn execute(
         body,
         body_encoding,
         saved_path,
+        cookies: response_cookies,
     })
 }
 
@@ -464,6 +567,7 @@ mod tests {
             binary_path: String::new(),
             auth: RequestAuth::default(),
             danger_accept_invalid_certs: false,
+            use_cookie_jar: true,
             timeout_ms: None,
             pre_request_script: None,
             test_script: None,
@@ -738,5 +842,27 @@ mod tests {
             "Request with invalid cert allowed should succeed: {:?}",
             res.err()
         );
+    }
+
+    #[test]
+    fn captures_set_cookie_and_returns_in_response() {
+        let server = MockServer::start(|_req, _| {
+            (
+                200,
+                vec![
+                    ("Set-Cookie", "session=xyz987; Path=/; HttpOnly"),
+                    ("Content-Type", "text/plain"),
+                ],
+                b"ok".to_vec(),
+            )
+        });
+
+        let res = block_on(execute(req("GET", &server.url("/api")), None, None)).unwrap();
+        assert_eq!(res.status, 200);
+        assert_eq!(res.cookies.len(), 1);
+        let c = &res.cookies[0];
+        assert_eq!(c.name, "session");
+        assert_eq!(c.value, "xyz987");
+        assert!(c.http_only);
     }
 }

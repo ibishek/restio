@@ -130,6 +130,8 @@ pub struct HttpRequest {
     pub auth: RequestAuth,
     #[serde(default)]
     pub danger_accept_invalid_certs: bool,
+    #[serde(default = "default_true")]
+    pub use_cookie_jar: bool,
     #[serde(default)]
     pub timeout_ms: Option<u64>,
     #[serde(default)]
@@ -138,6 +140,30 @@ pub struct HttpRequest {
     #[serde(default)]
     #[allow(dead_code)]
     pub test_script: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// A stored HTTP cookie. Scoped per workspace in SQLite.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct Cookie {
+    pub id: String,
+    pub workspace_id: String,
+    pub domain: String,
+    pub path: String,
+    pub name: String,
+    pub value: String,
+    pub http_only: bool,
+    pub secure: bool,
+    pub same_site: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_age: Option<i64>,
+    pub created_at: i64,
 }
 
 /// The captured result of a round-trip, sent back to the UI.
@@ -156,6 +182,8 @@ pub struct HttpResponse {
     pub body_encoding: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub saved_path: Option<String>,
+    #[serde(default)]
+    pub cookies: Vec<Cookie>,
 }
 
 /// A single streaming chunk emitted in real time to the frontend over a Tauri channel.

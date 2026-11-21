@@ -7,6 +7,7 @@ mod store;
 mod sync;
 mod tray;
 
+use commands::cookies::{clear_cookies, delete_cookie, get_cookies, save_cookie};
 use commands::requests::{cancel_request, send_request};
 use commands::sharing::{
     sharing_clone, sharing_default_dir, sharing_init, sharing_publish, sharing_pull,
@@ -84,7 +85,11 @@ pub fn run() {
             rename_workspace,
             delete_workspace,
             set_active_env,
-            workspace_members
+            workspace_members,
+            get_cookies,
+            save_cookie,
+            delete_cookie,
+            clear_cookies
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

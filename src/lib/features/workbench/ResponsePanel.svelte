@@ -12,6 +12,7 @@
   import {
     activeTab,
     deleteSavedResponse,
+    openCookieManager,
     renameSavedResponse,
     saveResponseAsExample,
     send,
@@ -83,6 +84,7 @@
                 },
               ]
             : []),
+          { id: "cookies", label: "Cookies" },
           { id: "headers", label: "Headers" },
           { id: "timing", label: "Timing" },
           { id: "tests", label: "Test Results" },
@@ -589,7 +591,11 @@
           class:text-ink-muted={tab.resTab !== rt.id}
         >
           {rt.label}
-          {#if rt.id === "headers" && headerEntries.length > 0}
+          {#if rt.id === "cookies" && currentResponse && "cookies" in currentResponse && currentResponse.cookies && currentResponse.cookies.length > 0}
+            <span class="rounded-full bg-amber-500/15 px-1.5 text-10 font-medium tabular-nums text-amber-400">
+              {currentResponse.cookies.length}
+            </span>
+          {:else if rt.id === "headers" && headerEntries.length > 0}
             <span class="rounded-full bg-panel-2 px-1.5 text-10 font-medium tabular-nums text-ink-muted">
               {headerEntries.length}
             </span>
@@ -737,6 +743,13 @@
           <pre
             class="min-w-0 font-mono text-13 leading-relaxed break-words whitespace-pre-wrap text-ink">{prettyBody}</pre>
         {/if}
+      {:else if tab.resTab === "cookies"}
+        {#await import("./CookieViewer.svelte") then { default: CookieViewer }}
+          <CookieViewer
+            cookies={currentResponse && "cookies" in currentResponse && currentResponse.cookies ? currentResponse.cookies : []}
+            onManageCookies={openCookieManager}
+          />
+        {/await}
       {:else if tab.resTab === "headers"}
         <div class="space-y-3">
           {#if headerEntries.length > 3}

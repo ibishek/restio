@@ -12,6 +12,9 @@ export {
   openCommandPalette,
   closeCommandPalette,
   toggleCommandPalette,
+  cookieManagerState,
+  openCookieManager,
+  closeCookieManager,
   wb,
 } from "./stores/workbench.svelte";
 

@@ -835,6 +835,23 @@ rio.setEnv("fakePhone", faker.phone.number());
       <div class="max-w-xl space-y-4">
         <div class="flex items-start justify-between gap-4 rounded-lg border border-line bg-panel p-3.5">
           <div>
+            <label for="cookie-jar" class="text-sm font-medium text-ink">
+              Automatic Cookie Jar & Session Persistence
+            </label>
+            <p class="mt-0.5 text-xs text-ink-faint">
+              Automatically captures Set-Cookie headers and attaches matching cookies to subsequent domain calls.
+            </p>
+          </div>
+          <input
+            id="cookie-jar"
+            type="checkbox"
+            bind:checked={tab.request.useCookieJar}
+            class="mt-1 size-4 accent-brand cursor-pointer"
+          />
+        </div>
+
+        <div class="flex items-start justify-between gap-4 rounded-lg border border-line bg-panel p-3.5">
+          <div>
             <label for="ssl-verify" class="text-sm font-medium text-ink">
               Allow self-signed or invalid SSL/TLS certificates
             </label>
