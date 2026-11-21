@@ -11,7 +11,7 @@ The right panel of RestIO provides diagnostic tools for analyzing server respons
 +-----------------------------------------------------------------------+
 |  Status: 200 OK      Time: 142 ms      Size: 4.8 KB     [Save Example] |
 +-----------------------------------------------------------------------+
-|  [Body]  [Headers (12)]  [Timing ◉]  [Test Results (3/3)]             |
+|  [Body]  [⚡ Stream (42)]  [Headers (12)]  [Timing ◉]  [Test Results]   |
 |                                                                       |
 |  Server Timing Waterfall:                                             |
 |  Total Server Duration: 82 ms                                         |
@@ -36,7 +36,20 @@ Under the **Body** tab, you can inspect payloads across multiple modes:
 
 ---
 
-## 2. Server-Timing Waterfall Visualizer
+## 2. Server-Sent Events (SSE) & LLM Streaming
+
+When calling streaming endpoints (`Content-Type: text/event-stream` or chunked transfer streaming), RestIO automatically activates the **Stream** tab:
+
+- **✦ LLM View**: Automatically extracts deltas from OpenAI, Anthropic Claude, Google Gemini, Ollama, and DeepSeek, rendering live markdown/text with a blinking streaming cursor (`█`), token counters, and smart auto-scroll.
+- **≡ Events View**: Filterable chronological timeline with per-event latency badges (`+XXms`), event type and ID badges, collapsible payloads, and JSON formatting.
+- **Real-Time Performance Strip**: Live tracking of TTFT (Time to First Token), tokens/sec throughput, duration, and transferred bytes.
+- **Controls**: 1-click text copy, export to `.txt` or `.jsonl`, and non-blocking abort.
+
+> For an in-depth walkthrough, see [SSE & LLM Stream Viewer](./sse-and-llm-streaming).
+
+---
+
+## 3. Server-Timing Waterfall Visualizer
 
 RestIO features native visual parsing of the standard [`Server-Timing`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing) HTTP response header.
 
@@ -54,7 +67,7 @@ RestIO automatically creates:
 
 ---
 
-## 3. Large Payload Protection & Native Downloads
+## 4. Large Payload Protection & Native Downloads
 
 Rendering massive JSON or text files (e.g. 10MB+) inside a webview DOM causes high memory consumption and browser freezes.
 
@@ -66,7 +79,7 @@ RestIO includes automatic safety mechanisms:
 
 ---
 
-## 4. Header Search & 1-Click Copy
+## 5. Header Search & 1-Click Copy
 
 The **Headers** tab provides:
 

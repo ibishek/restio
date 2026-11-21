@@ -7,6 +7,7 @@
   import { extForContentType, humanBytes, saveFiltersForContentType } from "#lib/utils/format";
   import { highlightJson } from "#lib/utils/highlight";
   import ServerTimingViewer from "./ServerTimingViewer.svelte";
+  import StreamViewer from "./StreamViewer/StreamViewer.svelte";
   import { summarizeServerTiming } from "#lib/utils/serverTiming";
   import {
     activeTab,
@@ -60,6 +61,11 @@
     summarizeServerTiming(currentResponse?.headers, currentResponse?.timeMs ?? 0),
   );
 
+  const hasStream = $derived(
+    tab.streamEvents.length > 0 ||
+      (currentResponse?.headers["content-type"] ?? "").toLowerCase().includes("text/event-stream"),
+  );
+
   const tabs = $derived<{ id: ResTab; label: string }[]>(
     isViewingExample
       ? [
@@ -69,6 +75,14 @@
         ]
       : [
           { id: "body", label: "Body" },
+          ...(hasStream
+            ? [
+                {
+                  id: "stream" as ResTab,
+                  label: `Stream${tab.streamEvents.length ? ` (${tab.streamEvents.length})` : ""}`,
+                },
+              ]
+            : []),
           { id: "headers", label: "Headers" },
           { id: "timing", label: "Timing" },
           { id: "tests", label: "Test Results" },
@@ -496,6 +510,15 @@
           {/if}
         </div>
       </div>
+    {:else if tab.isStreaming && tab.streamEvents.length > 0}
+      <div class="flex items-center gap-3 text-13">
+        <span class="flex items-center gap-1.5 font-semibold text-emerald-400">
+          <span class="size-2 animate-ping rounded-full bg-emerald-400"></span>
+          Streaming
+        </span>
+        <span class="tabular-nums text-ink-muted">~{tab.streamMetrics.tokenCount} tok</span>
+        <span class="tabular-nums text-ink-muted">{humanBytes(tab.streamMetrics.totalBytes)}</span>
+      </div>
     {/if}
   </header>
 
@@ -556,7 +579,7 @@
     </div>
   {/if}
 
-  {#if currentResponse}
+  {#if currentResponse || tab.streamEvents.length > 0}
     <div class="flex shrink-0 items-center gap-1 border-y border-line px-4">
       {#each tabs as rt (rt.id)}
         <button
@@ -592,8 +615,10 @@
       {/each}
     </div>
 
-    <div class="min-h-0 w-full min-w-0 flex-1 overflow-y-auto p-4 overscroll-contain">
-      {#if tab.resTab === "body"}
+    <div class="min-h-0 w-full min-w-0 flex-1 overflow-y-auto {tab.resTab === 'stream' ? 'p-0 flex flex-col' : 'p-4'} overscroll-contain">
+      {#if tab.resTab === "stream"}
+        <StreamViewer {tab} />
+      {:else if tab.resTab === "body"}
         {#if tooLarge}
           <!-- Too large to render safely — offer download / save to file or open saved file -->
           <div class="flex min-h-full flex-col items-center justify-center gap-3 p-6 text-center">
@@ -782,11 +807,15 @@
             </div>
           </div>
         </div>
-      {:else if tab.resTab === "timing"}
+      {:else if tab.resTab === "timing" && currentResponse}
         <ServerTimingViewer
           headers={currentResponse.headers}
           clientRoundTripMs={currentResponse.timeMs}
         />
+      {:else if tab.resTab === "timing"}
+        <div class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center text-ink-muted">
+          Timing metrics will appear once the stream or response completes.
+        </div>
       {:else if tab.resTab === "tests"}
         {#if isViewingExample}
           <div class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">

@@ -11,8 +11,10 @@ import { composePath, effectiveAuth } from "./collections.svelte";
 import { activeEnvironment, applyEnvUpdates } from "./environments.svelte";
 import { recordHistory } from "./history.svelte";
 import { activeTab, saveTab } from "./tabs.svelte";
+import { StreamParser } from "../StreamViewer/streamParser";
 import {
   defaultAuth,
+  defaultStreamMetrics,
   kv,
   makeTab,
   mp,
@@ -144,6 +146,10 @@ export async function send(): Promise<void> {
   t.activeExampleId = null;
   t.testResults = [];
   t.scriptLogs = [];
+  t.streamEvents = [];
+  t.streamText = "";
+  t.isStreaming = false;
+  t.streamMetrics = defaultStreamMetrics();
 
   // 1. Pre-request script execution
   if (t.request.preRequestScript && t.request.preRequestScript.trim()) {
@@ -199,7 +205,27 @@ export async function send(): Promise<void> {
 
   try {
     const resolved = resolveRequest(toSend, activeEnvironment());
-    t.response = await sendRequest(runId, resolved);
+    const streamParser = new StreamParser();
+    let streamSwitched = false;
+
+    t.response = await sendRequest(runId, resolved, (chunk) => {
+      const result = streamParser.pushChunk(chunk);
+      if (result.isSse && result.newEvents.length > 0) {
+        t.isStreaming = true;
+        t.streamEvents.push(...result.newEvents);
+        if (result.newText) {
+          t.streamText += result.newText;
+        }
+        t.streamMetrics = result.metrics;
+
+        // Auto-switch to stream tab when SSE events start arriving
+        if (!streamSwitched) {
+          streamSwitched = true;
+          t.resTab = "stream";
+        }
+      }
+    });
+
     recordHistory(composed, t.response);
     const r = t.response;
 
@@ -248,7 +274,12 @@ export async function send(): Promise<void> {
     }
 
     if (t.resTab !== "tests") {
-      t.resTab = "body";
+      const isSse = (r.headers["content-type"] ?? "").toLowerCase().includes("text/event-stream");
+      if (streamSwitched || (isSse && t.streamEvents.length > 0)) {
+        t.resTab = "stream";
+      } else {
+        t.resTab = "body";
+      }
     }
 
     toast[r.status >= 400 ? "warn" : "success"](
@@ -264,6 +295,7 @@ export async function send(): Promise<void> {
   } finally {
     if (t.currentRunId === runId) t.currentRunId = null;
     t.sending = false;
+    t.isStreaming = false;
     t.cancelled = false;
   }
 }

@@ -45,6 +45,7 @@ export {
 
 export {
   activeTab,
+  addSseHeadersToActive,
   canonParts,
   canonRequest,
   canonRows,
@@ -55,6 +56,7 @@ export {
   hasUnsavedTabs,
   isTabDirty,
   newRequest,
+  newSseRequest,
   newTab,
   requestCloseOthers,
   requestCloseTab,

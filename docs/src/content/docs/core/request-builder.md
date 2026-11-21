@@ -92,6 +92,7 @@ RestIO provides 4 authentication modes in the **Auth** tab:
 - **Key-Value Editor**: Easily toggle rows on/off with checkboxes without deleting their values.
 - **Bulk Variable Interpolation**: Use `{{variable}}` anywhere inside keys or values.
 - **Auto Content-Type**: Setting a body mode automatically manages the appropriate `Content-Type` header while allowing manual overrides.
+- **⚡ SSE Presets**: When testing streaming APIs or LLM completions, click the **⚡ Add SSE Preset** button above the headers table to instantly inject `Accept: text/event-stream` and `Cache-Control: no-cache`. Learn more in the [SSE & LLM Streaming Guide](/core/sse-and-llm-streaming).
 
 ---
 

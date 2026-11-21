@@ -45,6 +45,7 @@ wire.
 ## Features
 
 - 🚀 **Full-power HTTP** — requests run in Rust (`reqwest`); set any header, hit any host, no CORS limits
+- ⚡ **SSE & LLM Stream Viewer** — real-time Server-Sent Events (`text/event-stream`) inspector with dual views: auto-token accumulator for OpenAI, Anthropic, Gemini, Ollama, and DeepSeek, plus a filterable chronological SSE event timeline with TTFT and throughput metrics
 - 🛑 **Cancellable** — abort in-flight requests at any time with native abort handles
 - 📁 **Collections & Workspaces** — organize requests with nested folders and base URL inheritance
 - 🤝 **Git-backed Sharing** — publish, pull, and collaborate on collections via Git without leaking secrets
@@ -58,7 +59,6 @@ wire.
 - 🎲 **Integrated Mock Data** — built-in `@faker-js/faker` for generating realistic fake payloads and test data in scripts
 - 🏃 **Collection Runner** — automated multi-request test suites with request chaining, iteration counts, delays, stop-on-failure, and exportable run summaries
 - ⚡ **Command Palette (`⌘K`)** — global search across requests, history, environments, and commands with quick filter prefixes (`>`, `/`, `env:`, `hist:`, `ws:`)
-- 🎯 **Accessible Focus & Trapping** — universal modal focus trapping (`use:focusTrap`) across all dialogs with border-hugging keyboard focus highlights
 - ✨ **Developer Iconography** — crisp developer-oriented icons powered by `@lucide/svelte`
 - 🔒 **TLS & Timeouts** — toggle self-signed certificate validation and custom request timeouts
 - 🎨 **Native & Fast** — lightweight Tauri v2 shell, first-class dark mode, responsive keyboard shortcuts

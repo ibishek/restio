@@ -8,7 +8,8 @@ use url::form_urlencoded;
 
 use super::auth;
 use crate::error::AppError;
-use crate::models::{HttpRequest, HttpResponse};
+use crate::models::{HttpRequest, HttpResponse, StreamChunk};
+use tauri::ipc::Channel;
 
 /// Content types we return as base64 rather than lossy UTF-8, so binary bodies
 /// (images, PDFs, fonts, …) survive the trip and can be rendered in the UI.
@@ -31,6 +32,7 @@ pub const STREAM_OFFLOAD_THRESHOLD: usize = 5 * 1024 * 1024; // 5 MB
 pub async fn execute(
     req: HttpRequest,
     app: Option<&tauri::AppHandle>,
+    on_stream: Option<Channel<StreamChunk>>,
 ) -> Result<HttpResponse, AppError> {
     let method = Method::from_bytes(req.method.trim().to_uppercase().as_bytes())
         .map_err(|_| AppError::InvalidMethod(req.method.clone()))?;
@@ -187,6 +189,7 @@ pub async fn execute(
     let mut body = String::new();
     let body_encoding: String;
     let mut saved_path = None;
+    let mut chunk_index = 0usize;
 
     if content_length.is_some_and(|len| len >= STREAM_OFFLOAD_THRESHOLD as u64) {
         // Stream directly to file on disk to protect memory
@@ -200,6 +203,17 @@ pub async fn execute(
             .await
             .map_err(|e| AppError::Request(friendly(&e)))?
         {
+            if let Some(ref channel) = on_stream {
+                let text = String::from_utf8_lossy(&chunk).into_owned();
+                let elapsed_ms = start.elapsed().as_millis() as u64;
+                let _ = channel.send(StreamChunk {
+                    index: chunk_index,
+                    text,
+                    elapsed_ms,
+                    bytes: chunk.len(),
+                });
+                chunk_index += 1;
+            }
             size_bytes += chunk.len() as u64;
             file.write_all(&chunk)
                 .await
@@ -220,6 +234,17 @@ pub async fn execute(
             .await
             .map_err(|e| AppError::Request(friendly(&e)))?
         {
+            if let Some(ref channel) = on_stream {
+                let text = String::from_utf8_lossy(&chunk).into_owned();
+                let elapsed_ms = start.elapsed().as_millis() as u64;
+                let _ = channel.send(StreamChunk {
+                    index: chunk_index,
+                    text,
+                    elapsed_ms,
+                    bytes: chunk.len(),
+                });
+                chunk_index += 1;
+            }
             if spilled_file.is_none() && bytes.len() + chunk.len() > STREAM_OFFLOAD_THRESHOLD {
                 let file_path = crate::store::download_path_for(app, &content_type)?;
                 let mut file = tokio::fs::File::create(&file_path)
@@ -454,7 +479,8 @@ mod tests {
                 b"Mock Server Response".to_vec(),
             )
         });
-        let res = block_on(execute(req("GET", &server.url("/")), None)).expect("request succeeds");
+        let res =
+            block_on(execute(req("GET", &server.url("/")), None, None)).expect("request succeeds");
         assert_eq!(res.status, 200);
         assert!(res.size_bytes > 0);
         assert!(res.body.contains("Mock Server Response"));
@@ -475,7 +501,7 @@ mod tests {
             value: "world".to_string(),
             enabled: true,
         });
-        let res = block_on(execute(r, None)).expect("request succeeds");
+        let res = block_on(execute(r, None, None)).expect("request succeeds");
         assert_eq!(res.status, 200);
         assert!(res.body.contains("hello=world"));
     }
@@ -501,7 +527,7 @@ mod tests {
             value: "nope".to_string(),
             enabled: false,
         });
-        let res = block_on(execute(r, None)).expect("request succeeds");
+        let res = block_on(execute(r, None, None)).expect("request succeeds");
         assert_eq!(res.status, 200);
         assert!(res.body.contains("greeting=hello+world"));
         assert!(res.body.contains("application/x-www-form-urlencoded"));
@@ -527,7 +553,7 @@ mod tests {
         let mut r = req("POST", &server.url("/post"));
         r.body_mode = "binary".to_string();
         r.binary_path = path.to_string_lossy().into_owned();
-        let res = block_on(execute(r, None)).expect("request succeeds");
+        let res = block_on(execute(r, None, None)).expect("request succeeds");
         assert_eq!(res.status, 200);
         assert!(res.body.contains("binary-body-contents"));
         assert!(res.body.contains("application/octet-stream"));
@@ -562,7 +588,7 @@ mod tests {
             file_path: path.to_string_lossy().into_owned(),
             enabled: true,
         });
-        let res = block_on(execute(r, None)).expect("request succeeds");
+        let res = block_on(execute(r, None, None)).expect("request succeeds");
         assert_eq!(res.status, 200);
         assert!(res.body.contains("text-part"));
         assert!(res.body.contains("restio_multipart_upload.txt"));
@@ -588,7 +614,7 @@ mod tests {
         r.auth.bearer = BearerAuth {
             token: "TKN123".to_string(),
         };
-        let res = block_on(execute(r, None)).expect("succeeds");
+        let res = block_on(execute(r, None, None)).expect("succeeds");
         assert!(res.body.contains("Bearer TKN123"));
 
         // Basic → Authorization: Basic base64(user:pass). base64("user:pass").
@@ -598,7 +624,7 @@ mod tests {
             username: "user".to_string(),
             password: "pass".to_string(),
         };
-        let res = block_on(execute(r, None)).expect("succeeds");
+        let res = block_on(execute(r, None, None)).expect("succeeds");
         assert!(res.body.contains("Basic dXNlcjpwYXNz"));
 
         // API key in header.
@@ -609,7 +635,7 @@ mod tests {
             value: "s3cret".to_string(),
             add_to: "header".to_string(),
         };
-        let res = block_on(execute(r, None)).expect("succeeds");
+        let res = block_on(execute(r, None, None)).expect("succeeds");
         assert!(res.body.contains("X-Api-Key: s3cret") || res.body.contains("x-api-key: s3cret"));
 
         // API key in query.
@@ -620,13 +646,13 @@ mod tests {
             value: "qval".to_string(),
             add_to: "query".to_string(),
         };
-        let res = block_on(execute(r, None)).expect("succeeds");
+        let res = block_on(execute(r, None, None)).expect("succeeds");
         assert!(res.body.contains("api_key=qval"));
     }
 
     #[test]
     fn rejects_a_bad_url() {
-        let err = block_on(execute(req("GET", "not a url"), None)).unwrap_err();
+        let err = block_on(execute(req("GET", "not a url"), None, None)).unwrap_err();
         assert!(matches!(err, AppError::InvalidUrl(_)));
     }
 
@@ -641,7 +667,8 @@ mod tests {
                 payload_clone.clone(),
             )
         });
-        let res = block_on(execute(req("GET", &server.url("/image.png")), None)).expect("succeeds");
+        let res =
+            block_on(execute(req("GET", &server.url("/image.png")), None, None)).expect("succeeds");
         assert_eq!(res.status, 200);
         assert_eq!(res.body_encoding, "base64");
         assert_eq!(res.size_bytes, binary_payload.len() as u64);
@@ -661,8 +688,9 @@ mod tests {
             (200, vec![], b"done".to_vec())
         });
         block_on(async {
-            let task =
-                tokio::spawn(async move { execute(req("GET", &server.url("/delay")), None).await });
+            let task = tokio::spawn(async move {
+                execute(req("GET", &server.url("/delay")), None, None).await
+            });
             let abort = task.abort_handle();
             tokio::time::sleep(std::time::Duration::from_millis(50)).await;
             abort.abort();
@@ -685,7 +713,8 @@ mod tests {
                 large,
             )
         });
-        let res = block_on(execute(req("GET", &server.url("/large")), None)).expect("succeeds");
+        let res =
+            block_on(execute(req("GET", &server.url("/large")), None, None)).expect("succeeds");
         assert_eq!(res.status, 200);
         assert_eq!(res.body_encoding, "file");
         assert_eq!(res.size_bytes, 6 * 1024 * 1024);
@@ -703,7 +732,7 @@ mod tests {
     fn allows_self_signed_cert_when_danger_flag_enabled() {
         let mut r = req("GET", "https://self-signed.badssl.com/");
         r.danger_accept_invalid_certs = true;
-        let res = block_on(execute(r, None));
+        let res = block_on(execute(r, None, None));
         assert!(
             res.is_ok(),
             "Request with invalid cert allowed should succeed: {:?}",

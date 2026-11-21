@@ -11,6 +11,8 @@ import type {
   MultipartField,
   RequestAuth,
   SavedResponse,
+  SseEvent,
+  StreamMetrics,
   TestResult,
 } from "#lib/types";
 
@@ -23,7 +25,7 @@ export interface RequestLocation {
 }
 
 export type ReqTab = "params" | "headers" | "body" | "auth" | "scripts" | "settings";
-export type ResTab = "body" | "headers" | "timing" | "tests";
+export type ResTab = "body" | "headers" | "timing" | "tests" | "stream";
 
 /** One open request tab. Everything that used to be a single "open document"
  *  now lives per-tab, so requests (and their in-flight sends) are independent. */
@@ -48,6 +50,14 @@ export interface Tab {
   scriptLogs: string[];
   /** When set, the response viewer displays this saved example response instead of live response. */
   activeExampleId: string | null;
+  /** Server-Sent Events or streamed event history. */
+  streamEvents: SseEvent[];
+  /** Accumulated LLM or raw stream text. */
+  streamText: string;
+  /** Live streaming in-progress indicator. */
+  isStreaming: boolean;
+  /** Live metrics for stream throughput, token counts, and TTFT. */
+  streamMetrics: StreamMetrics;
 }
 
 /** A pending confirmation prompt (unsaved-changes guard). `onConfirm` is the
@@ -199,6 +209,15 @@ function cloneRequest(req: HttpRequest): HttpRequest {
   return JSON.parse(JSON.stringify(req)) as HttpRequest;
 }
 
+export const defaultStreamMetrics = (): StreamMetrics => ({
+  eventCount: 0,
+  totalBytes: 0,
+  tokenCount: 0,
+  tokensPerSec: 0,
+  durationMs: 0,
+  ttftMs: null,
+});
+
 /** A fresh tab wrapping `request` (deep-copied) at `location`. */
 export function makeTab(request: HttpRequest, location: RequestLocation | null): Tab {
   return {
@@ -217,5 +236,9 @@ export function makeTab(request: HttpRequest, location: RequestLocation | null):
     testResults: [],
     scriptLogs: [],
     activeExampleId: null,
+    streamEvents: [],
+    streamText: "",
+    isStreaming: false,
+    streamMetrics: defaultStreamMetrics(),
   };
 }

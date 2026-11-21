@@ -13,8 +13,8 @@ This document outlines the planned feature backlog, architectural considerations
 
 | Priority | Feature Area                                          | Primary Impact                      | Target Milestone |
 | :------: | :---------------------------------------------------- | :---------------------------------- | :--------------: |
-|  **P1**  | **Server-Sent Events (SSE) & LLM Stream Viewer**      | AI/LLM developer adoption           |     `v0.2.0`     |
-|  **P1**  | **Automatic Cookie Jar & Session Persistence**        | Frictionless auth workflows         |     `v0.2.0`     |
+|  **P1**  | **Server-Sent Events (SSE) & LLM Stream Viewer**      | AI/LLM developer adoption           |   ✅ Completed   |
+|  **P1**  | **Automatic Cookie Jar & Session Persistence**        | Frictionless auth workflows         |     `v0.2.x`     |
 |  **P2**  | **Headless CLI Test Runner (`restio run`)**           | CI/CD automation & pipelines        |     `v0.3.0`     |
 |  **P2**  | **WebSocket Client (`ws://`, `wss://`)**              | Real-time & event-driven APIs       |     `v0.3.0`     |
 |  **P2**  | **GraphQL Explorer & Schema Introspection**           | Broadened protocol support          |     `v0.3.0`     |

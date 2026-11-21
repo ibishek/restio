@@ -35,6 +35,7 @@ export default defineConfig({
             { label: "Rust HTTP Engine", slug: "core/http-engine" },
             { label: "Environments & Variables", slug: "core/environments" },
             { label: "Response Inspector & Timing", slug: "core/response-inspector" },
+            { label: "SSE & LLM Stream Viewer", slug: "core/sse-and-llm-streaming" },
             { label: "Saved Response Examples", slug: "core/saved-examples" },
             { label: "Send History & Tabs", slug: "core/history-tabs" },
           ],

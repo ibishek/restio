@@ -10,11 +10,13 @@
     type PaletteItem,
   } from "#lib/utils/search";
   import {
+    addSseHeadersToActive,
     closeCommandPalette,
     createCollection,
     loadRequest,
     methodColor,
     newRequest,
+    newSseRequest,
     openRunner,
     paletteState,
     saveCurrentRequest,
@@ -124,6 +126,24 @@
         shortcut: [mod, "N"],
         keywords: ["new", "tab", "create", "http"],
         action: () => newRequest(),
+      },
+      {
+        id: "cmd-new-sse-request",
+        category: "commands",
+        title: "New SSE / stream request",
+        subtitle: "Create a request pre-configured with text/event-stream headers",
+        icon: "zap",
+        keywords: ["sse", "stream", "streaming", "eventsource", "llm", "event-stream", "new"],
+        action: () => newSseRequest(),
+      },
+      {
+        id: "cmd-add-sse-headers",
+        category: "commands",
+        title: "Add SSE streaming headers",
+        subtitle: "Add Accept: text/event-stream to active request",
+        icon: "zap",
+        keywords: ["sse", "stream", "header", "event-stream", "text/event-stream", "accept"],
+        action: () => addSseHeadersToActive(),
       },
       {
         id: "cmd-send-request",

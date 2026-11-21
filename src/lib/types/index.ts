@@ -122,6 +122,35 @@ export interface HttpResponse {
   savedPath?: string;
 }
 
+/** A raw streaming chunk emitted by the Rust engine over IPC. */
+export interface StreamChunk {
+  index: number;
+  text: string;
+  elapsedMs: number;
+  bytes: number;
+}
+
+/** A single parsed Server-Sent Event (SSE). */
+export interface SseEvent {
+  id: number;
+  eventId?: string;
+  eventType: string;
+  data: string;
+  raw: string;
+  timestampMs: number;
+  deltaMs: number;
+}
+
+/** Computed real-time performance and generation metrics for live streams. */
+export interface StreamMetrics {
+  eventCount: number;
+  totalBytes: number;
+  tokenCount: number;
+  tokensPerSec: number;
+  durationMs: number;
+  ttftMs: number | null;
+}
+
 export interface RunnerItem {
   id: string;
   request: HttpRequest;
