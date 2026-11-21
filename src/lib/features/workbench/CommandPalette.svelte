@@ -17,6 +17,7 @@
     methodColor,
     newRequest,
     newSseRequest,
+    openCookieManager,
     openRunner,
     paletteState,
     saveCurrentRequest,
@@ -27,6 +28,7 @@
     toggleSidebar,
     wb,
   } from "./state.svelte";
+  import { clearCookies } from "#lib/ipc";
   import { manualCheckForUpdates } from "./stores/updater.svelte";
 
   let {
@@ -144,6 +146,27 @@
         icon: "zap",
         keywords: ["sse", "stream", "header", "event-stream", "text/event-stream", "accept"],
         action: () => addSseHeadersToActive(),
+      },
+      {
+        id: "cmd-manage-cookies",
+        category: "commands",
+        title: "Manage cookies",
+        subtitle: "Inspect, edit, or purge cookies in the active workspace cookie jar",
+        icon: "database",
+        keywords: ["cookie", "cookies", "jar", "session", "auth", "token", "manage"],
+        action: () => openCookieManager(),
+      },
+      {
+        id: "cmd-clear-workspace-cookies",
+        category: "commands",
+        title: "Clear all workspace cookies",
+        subtitle: "Purge all stored cookies across all domains for the current workspace",
+        icon: "trash",
+        keywords: ["cookie", "cookies", "purge", "clear", "delete", "session", "reset"],
+        action: async () => {
+          await clearCookies();
+          toast.success("Workspace cookie jar cleared");
+        },
       },
       {
         id: "cmd-send-request",

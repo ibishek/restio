@@ -25,7 +25,7 @@ export interface RequestLocation {
 }
 
 export type ReqTab = "params" | "headers" | "body" | "auth" | "scripts" | "settings";
-export type ResTab = "body" | "headers" | "timing" | "tests" | "stream";
+export type ResTab = "body" | "headers" | "cookies" | "timing" | "tests" | "stream";
 
 /** One open request tab. Everything that used to be a single "open document"
  *  now lives per-tab, so requests (and their in-flight sends) are independent. */
@@ -140,6 +140,7 @@ export function makeRequest(
     multipart: [mp()],
     binaryPath: "",
     dangerAcceptInvalidCerts: false,
+    useCookieJar: true,
     timeoutMs: undefined,
     preRequestScript: opts.preRequestScript ?? "",
     testScript: opts.testScript ?? "",
@@ -160,6 +161,7 @@ export function normalizeRequest(req: HttpRequest): HttpRequest {
     multipart: req.multipart?.length ? req.multipart : [mp()],
     binaryPath: req.binaryPath ?? "",
     dangerAcceptInvalidCerts: req.dangerAcceptInvalidCerts ?? false,
+    useCookieJar: req.useCookieJar ?? true,
     timeoutMs: req.timeoutMs,
     preRequestScript: req.preRequestScript ?? "",
     testScript: req.testScript ?? "",

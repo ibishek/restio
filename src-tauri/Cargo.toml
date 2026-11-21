@@ -49,6 +49,7 @@ base64 = "0.23"
 # tauri-plugin-sql and no capability grant needed, like std::fs). `bundled`
 # compiles SQLite from source so there's no system-library dependency.
 rusqlite = { version = "0.43", features = ["bundled"] }
+cookie = "0.18"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }

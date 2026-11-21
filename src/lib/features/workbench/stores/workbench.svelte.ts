@@ -196,6 +196,19 @@ export function toggleCommandPalette(): void {
   paletteState.open = !paletteState.open;
 }
 
+/** Reactive state for the global Cookie Jar modal. */
+export const cookieManagerState = $state({
+  open: false,
+});
+
+export function openCookieManager(): void {
+  cookieManagerState.open = true;
+}
+
+export function closeCookieManager(): void {
+  cookieManagerState.open = false;
+}
+
 /** Ask the Sidebar to focus its search box (it watches `searchNonce`). Expands
  *  the sidebar first if collapsed, so the box is actually visible. */
 export function requestSearchFocus(): void {

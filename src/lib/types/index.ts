@@ -69,6 +69,8 @@ export interface HttpRequest {
   deprecated?: boolean;
   /** Allow self-signed or invalid SSL/TLS certificates for local development. */
   dangerAcceptInvalidCerts?: boolean;
+  /** Automatically send stored cookies and persist received Set-Cookie headers. */
+  useCookieJar?: boolean;
   /** Request timeout in milliseconds (overrides the 30s default). */
   timeoutMs?: number;
   /** JavaScript executed before the request is dispatched. */
@@ -120,6 +122,24 @@ export interface HttpResponse {
   bodyEncoding: "utf8" | "base64" | "file";
   /** Optional absolute path if the response was offloaded directly to disk. */
   savedPath?: string;
+  /** Cookies captured or updated from response Set-Cookie headers. */
+  cookies?: Cookie[];
+}
+
+/** A stored HTTP cookie scoped per workspace. */
+export interface Cookie {
+  id: string;
+  workspaceId: string;
+  domain: string;
+  path: string;
+  name: string;
+  value: string;
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: string;
+  expires?: number;
+  maxAge?: number;
+  createdAt: number;
 }
 
 /** A raw streaming chunk emitted by the Rust engine over IPC. */

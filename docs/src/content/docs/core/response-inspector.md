@@ -11,7 +11,7 @@ The right panel of RestIO provides diagnostic tools for analyzing server respons
 +-----------------------------------------------------------------------+
 |  Status: 200 OK      Time: 142 ms      Size: 4.8 KB     [Save Example] |
 +-----------------------------------------------------------------------+
-|  [Body]  [⚡ Stream (42)]  [Headers (12)]  [Timing ◉]  [Test Results]   |
+|  [Body]  [Cookies (2)]  [⚡ Stream (42)]  [Headers (12)]  [Timing ◉]    |
 |                                                                       |
 |  Server Timing Waterfall:                                             |
 |  Total Server Duration: 82 ms                                         |
@@ -49,7 +49,20 @@ When calling streaming endpoints (`Content-Type: text/event-stream` or chunked t
 
 ---
 
-## 3. Server-Timing Waterfall Visualizer
+## 3. Response Cookies Tab
+
+When an endpoint responds with `Set-Cookie` headers, RestIO highlights the **Cookies** tab with a count badge (`Cookies (N)`):
+
+- **Attribute Breakdown**: Inspect cookie name, value, domain, path, and human-readable expiry date.
+- **Security Badges**: Clear visual badges for `HttpOnly`, `Secure`, and `SameSite` (`Strict`, `Lax`, `None`).
+- **1-Click Copy**: Copy individual cookie values or copy the entire set as a formatted `Cookie: name=val; name2=val2` header string.
+- **Manage Workspace Cookies**: Click **Manage Workspace Cookies ↗** to open the full workspace Cookie Manager.
+
+> Learn more in the [Cookie Jar & Session Persistence Guide](/core/cookie-jar).
+
+---
+
+## 4. Server-Timing Waterfall Visualizer
 
 RestIO features native visual parsing of the standard [`Server-Timing`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing) HTTP response header.
 
@@ -67,7 +80,7 @@ RestIO automatically creates:
 
 ---
 
-## 4. Large Payload Protection & Native Downloads
+## 5. Large Payload Protection & Native Downloads
 
 Rendering massive JSON or text files (e.g. 10MB+) inside a webview DOM causes high memory consumption and browser freezes.
 
@@ -79,7 +92,7 @@ RestIO includes automatic safety mechanisms:
 
 ---
 
-## 5. Header Search & 1-Click Copy
+## 6. Header Search & 1-Click Copy
 
 The **Headers** tab provides:
 
