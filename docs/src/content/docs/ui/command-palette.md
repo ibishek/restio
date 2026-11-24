@@ -31,6 +31,7 @@ Type a prefix at the start of the search input to filter items by category:
 | :-------------------------------- | :---------------------------------------------------------------------------------------------- | :---------------------------------------- |
 | **Send active request**           | Dispatches the currently focused request tab                                                    | <kbd>⌘Enter</kbd> / <kbd>Ctrl+Enter</kbd> |
 | **New request**                   | Opens a blank HTTP request tab                                                                  | <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd>         |
+| **New WebSocket request**         | Creates a request pre-configured for real-time WebSocket communication (`ws://` / `wss://`)     |                                           |
 | **New SSE / stream request**      | Creates a new tab pre-configured with `Accept: text/event-stream` and `Cache-Control: no-cache` |                                           |
 | **Add SSE headers to active tab** | Injects SSE streaming headers into the current active request tab                               |                                           |
 | **Close active tab**              | Closes the current request tab                                                                  | <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd>         |

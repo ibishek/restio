@@ -15,7 +15,7 @@ This document outlines the planned feature backlog, architectural considerations
 | :------: | :---------------------------------------------------- | :---------------------------------- | :--------------: |
 |  **P1**  | **Server-Sent Events (SSE) & LLM Stream Viewer**      | AI/LLM developer adoption           |   ✅ Completed   |
 |  **P1**  | **Automatic Cookie Jar & Session Persistence**        | Frictionless auth workflows         |   ✅ Completed   |
-|  **P2**  | **WebSocket Client (`ws://`, `wss://`)**              | Real-time & event-driven APIs       |     `v0.3.0`     |
+|  **P2**  | **WebSocket Client (`ws://`, `wss://`)**              | Real-time & event-driven APIs       |   ✅ Completed   |
 |  **P2**  | **GraphQL Explorer & Schema Introspection**           | Broadened protocol support          |     `v0.3.0`     |
 |  **P3**  | **Built-in Local Rust Mock Server**                   | Offline & frontend-first dev        |     `v0.4.0`     |
 |  **P3**  | **1-Click AI Test Assertion Generator**               | Speeding up QA script authoring     |     `v0.4.0`     |

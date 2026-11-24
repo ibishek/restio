@@ -37,6 +37,7 @@ export default defineConfig({
             { label: "Response Inspector & Timing", slug: "core/response-inspector" },
             { label: "SSE & LLM Stream Viewer", slug: "core/sse-and-llm-streaming" },
             { label: "Cookie Jar & Sessions", slug: "core/cookie-jar" },
+            { label: "WebSocket Client", slug: "core/websocket-client" },
             { label: "Saved Response Examples", slug: "core/saved-examples" },
             { label: "Send History & Tabs", slug: "core/history-tabs" },
           ],
