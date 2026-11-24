@@ -6,6 +6,9 @@ mod state;
 mod store;
 mod sync;
 mod tray;
+mod ws;
+
+use std::sync::Arc;
 
 use commands::cookies::{clear_cookies, delete_cookie, get_cookies, save_cookie};
 use commands::requests::{cancel_request, send_request};
@@ -19,6 +22,7 @@ use commands::store::{
     save_environments, save_history, save_response_body, save_response_to_file, save_settings,
     set_collections_path,
 };
+use commands::websocket::{ws_connect, ws_disconnect, ws_send};
 use commands::workspace::{
     active_workspace, create_workspace, delete_workspace, list_workspaces, rename_workspace,
     set_active_env, switch_workspace, workspace_members,
@@ -26,6 +30,7 @@ use commands::workspace::{
 use state::RequestRegistry;
 use store::db::Db;
 use tauri::Manager;
+use ws::WsConnectionRegistry;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -33,6 +38,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(RequestRegistry::default())
+        .manage(Arc::new(WsConnectionRegistry::default()))
         .setup(|app| {
             // Open the SQLite store (and run first-run JSON migration) once the
             // app handle exists, then hand it to managed state.
@@ -89,7 +95,10 @@ pub fn run() {
             get_cookies,
             save_cookie,
             delete_cookie,
-            clear_cookies
+            clear_cookies,
+            ws_connect,
+            ws_send,
+            ws_disconnect
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

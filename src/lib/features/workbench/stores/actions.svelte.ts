@@ -1,8 +1,15 @@
 // Request execution, cancellation, row manipulation, and cURL import.
 
-import { cancelRequest, sendRequest } from "#lib/ipc";
+import { cancelRequest, sendRequest, wsConnect, wsDisconnect, wsSend } from "#lib/ipc";
 import { toast } from "#lib/components/ui/toasts.svelte";
-import type { HttpMethod, HttpRequest, KeyValue, MultipartField, SavedResponse } from "#lib/types";
+import type {
+  HttpMethod,
+  HttpRequest,
+  KeyValue,
+  MultipartField,
+  SavedResponse,
+  WsEvent,
+} from "#lib/types";
 import { parseCurl } from "#lib/utils/curl";
 import { humanBytes, humanMs } from "#lib/utils/format";
 import { resolveRequest } from "#lib/utils/interpolate";
@@ -71,7 +78,8 @@ export function importCurl(text: string): boolean {
   return true;
 }
 
-export function methodColor(method: HttpMethod): string {
+export function methodColor(method: HttpMethod | string): string {
+  if (method === "WS" || method === "WEBSOCKET") return "text-purple-400";
   const map: Record<HttpMethod, string> = {
     GET: "text-emerald-400",
     POST: "text-amber-400",
@@ -81,7 +89,15 @@ export function methodColor(method: HttpMethod): string {
     HEAD: "text-slate-400",
     OPTIONS: "text-slate-400",
   };
-  return map[method];
+  return (map as Record<string, string>)[method] ?? "text-slate-400";
+}
+
+/** Get the method or protocol badge label for a request (e.g. GET vs WS). */
+export function requestLabel(req: HttpRequest): string {
+  if (req.protocol === "websocket" || req.url.startsWith("ws://") || req.url.startsWith("wss://")) {
+    return "WS";
+  }
+  return req.method;
 }
 
 export function statusTone(status: number): string {
@@ -137,6 +153,20 @@ export function ensureTrailingMultipart(list: MultipartField[]): void {
 export async function send(): Promise<void> {
   const t = activeTab();
   if (!t || t.kind !== "request" || t.sending || !t.request.url.trim()) return;
+
+  if (
+    t.request.protocol === "websocket" ||
+    t.request.url.startsWith("ws://") ||
+    t.request.url.startsWith("wss://")
+  ) {
+    if (t.wsState === "connected" || t.wsState === "connecting") {
+      void disconnectWebSocket(t);
+    } else {
+      void connectWebSocket(t);
+    }
+    return;
+  }
+
   const runId = uid();
   t.currentRunId = runId;
   t.cancelled = false;
@@ -369,4 +399,167 @@ export function renameSavedResponse(t: Tab, exampleId: string, newName: string):
 /** Switch the tab's view between live response and a saved example response. */
 export function setActiveExample(t: Tab, exampleId: string | null): void {
   t.activeExampleId = exampleId;
+}
+
+/** Connect to the WebSocket endpoint configured in the tab. */
+export async function connectWebSocket(t: Tab): Promise<void> {
+  if (t.wsState === "connected" || t.wsState === "connecting") return;
+  t.wsState = "connecting";
+  t.error = null;
+  t.response = null;
+
+  const composed = structuredClone($state.snapshot(t.request)) as HttpRequest;
+  composed.url = composePath(composed.url, t.requestLocation);
+
+  const resolved = resolveRequest(composed, activeEnvironment());
+
+  try {
+    await wsConnect(
+      t.id,
+      resolved.url,
+      resolved.headers,
+      resolved.dangerAcceptInvalidCerts ?? false,
+      (event) => {
+        handleWsEvent(t, event);
+      },
+    );
+  } catch (e) {
+    t.wsState = "disconnected";
+    t.error = e instanceof Error ? e.message : String(e);
+    toast.error("WebSocket connection failed", t.error);
+  }
+}
+
+/** Disconnect an active WebSocket connection. */
+export async function disconnectWebSocket(t: Tab): Promise<void> {
+  if (t.wsState === "disconnected") return;
+  t.wsState = "closing";
+  try {
+    await wsDisconnect(t.id, 1000, "User initiated disconnect");
+  } catch (e) {
+    t.wsState = "disconnected";
+    t.error = e instanceof Error ? e.message : String(e);
+  }
+}
+
+/** Send a message (text, JSON, or base64 binary) over the active WebSocket. */
+export async function sendWebSocketMessage(
+  t: Tab,
+  data: string,
+  kind: "text" | "binary" | "ping" = "text",
+): Promise<void> {
+  if (t.wsState !== "connected") {
+    toast.warn("Not connected", "Connect to a WebSocket server before sending messages");
+    return;
+  }
+  try {
+    await wsSend(t.id, { kind, data });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    toast.error("Send failed", msg);
+  }
+}
+
+/** Send an outbound Ping frame over the active WebSocket. */
+export async function sendWebSocketPing(t: Tab): Promise<void> {
+  if (t.wsState !== "connected") return;
+  try {
+    await wsSend(t.id, { kind: "ping", data: "" });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    toast.error("Ping failed", msg);
+  }
+}
+
+/** Clear all captured WebSocket messages in this tab. */
+export function clearWebSocketMessages(t: Tab): void {
+  t.wsMessages = [];
+}
+
+/** Internal handler for incoming WebSocket events dispatched over Tauri Channel. */
+function handleWsEvent(t: Tab, event: WsEvent): void {
+  switch (event.type) {
+    case "connected":
+      t.wsState = "connected";
+      t.wsConnectedAt = event.timestampMs ?? (event as unknown as { timestamp_ms?: number }).timestamp_ms ?? Date.now();
+      t.error = null;
+      toast.success("WebSocket connected", event.url);
+      break;
+
+    case "message": {
+      const size =
+        event.sizeBytes ??
+        (event as unknown as { size_bytes?: number }).size_bytes ??
+        (event.data ? event.data.length : 0);
+      const ts =
+        event.timestampMs ??
+        (event as unknown as { timestamp_ms?: number }).timestamp_ms ??
+        Date.now();
+      t.wsMessages.push({
+        id: uid(),
+        direction: event.direction,
+        kind: event.kind,
+        data: event.data,
+        sizeBytes: size,
+        timestampMs: ts,
+      });
+      break;
+    }
+
+    case "ping":
+      t.wsMessages.push({
+        id: uid(),
+        direction: event.direction,
+        kind: "ping",
+        data: "Ping",
+        sizeBytes: 0,
+        timestampMs:
+          event.timestampMs ??
+          (event as unknown as { timestamp_ms?: number }).timestamp_ms ??
+          Date.now(),
+      });
+      break;
+
+    case "pong": {
+      const latency =
+        event.latencyMs ??
+        (event as unknown as { latency_ms?: number }).latency_ms;
+      if (latency !== undefined) {
+        t.wsLastPingRttMs = latency;
+      }
+      t.wsMessages.push({
+        id: uid(),
+        direction: event.direction,
+        kind: "pong",
+        data: "Pong",
+        sizeBytes: 0,
+        timestampMs:
+          event.timestampMs ??
+          (event as unknown as { timestamp_ms?: number }).timestamp_ms ??
+          Date.now(),
+        latencyMs: latency,
+      });
+      break;
+    }
+
+    case "closed":
+      t.wsState = "disconnected";
+      t.wsConnectedAt = null;
+      if (!event.clean && event.reason) {
+        toast.warn("WebSocket closed", event.reason);
+      }
+      if (t.wsAutoReconnect && !event.clean) {
+        setTimeout(() => {
+          if (t.wsState === "disconnected") {
+            void connectWebSocket(t);
+          }
+        }, 3000);
+      }
+      break;
+
+    case "error":
+      t.error = event.message;
+      toast.error("WebSocket error", event.message);
+      break;
+  }
 }

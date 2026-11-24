@@ -238,6 +238,17 @@ export function newSseRequest(): void {
   toast.success("Created SSE request", "Accept: text/event-stream added");
 }
 
+/** Open a fresh WebSocket request in a new tab. */
+export function newWsRequest(): void {
+  const req = makeRequest("New WebSocket", "GET", "wss://echo.websocket.events", {
+    protocol: "websocket",
+  });
+  const tab = makeTab(req, null);
+  wb.tabs.push(tab);
+  wb.activeTabId = tab.id;
+  toast.success("Created WebSocket request", "wss://echo.websocket.events configured");
+}
+
 /** Injects SSE streaming headers into the active tab's request. */
 export function addSseHeadersToActive(): void {
   const t = activeTab();

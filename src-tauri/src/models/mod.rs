@@ -4,6 +4,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+pub mod websocket;
+pub use websocket::*;
+
 /// A workspace: the top-level container that scopes a set of collections and
 /// environments (and, via Git, its members). Mirrors `#lib/types` `Workspace`.
 #[derive(Debug, Clone, Serialize)]

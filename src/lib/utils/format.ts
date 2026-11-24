@@ -3,6 +3,7 @@
 
 /** Human-readable byte size: `842 B`, `1.2 KB`, `3.4 MB`. */
 export function humanBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -10,6 +11,7 @@ export function humanBytes(bytes: number): string {
 
 /** Round-trip time: `142 ms` under a second, `1.24 s` beyond. */
 export function humanMs(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "0 ms";
   return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
 }
 

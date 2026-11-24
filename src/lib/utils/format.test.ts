@@ -3,6 +3,10 @@ import { extForContentType, humanBytes, humanMs, saveFiltersForContentType } fro
 
 describe("format and file helper utils", () => {
   it("formats human byte sizes correctly", () => {
+    expect(humanBytes(0)).toBe("0 B");
+    expect(humanBytes(-10)).toBe("0 B");
+    expect(humanBytes(NaN)).toBe("0 B");
+    expect(humanBytes(undefined as unknown as number)).toBe("0 B");
     expect(humanBytes(500)).toBe("500 B");
     expect(humanBytes(1024)).toBe("1.0 KB");
     expect(humanBytes(2048)).toBe("2.0 KB");
@@ -10,6 +14,10 @@ describe("format and file helper utils", () => {
   });
 
   it("formats human millisecond durations correctly", () => {
+    expect(humanMs(0)).toBe("0 ms");
+    expect(humanMs(-5)).toBe("0 ms");
+    expect(humanMs(NaN)).toBe("0 ms");
+    expect(humanMs(undefined as unknown as number)).toBe("0 ms");
     expect(humanMs(45)).toBe("45 ms");
     expect(humanMs(999)).toBe("999 ms");
     expect(humanMs(1250)).toBe("1.25 s");

@@ -5,6 +5,7 @@
     wb,
     activeTab,
     methodColor,
+    requestLabel,
     statusTone,
     loadRequest,
     clearHistory,
@@ -383,13 +384,14 @@
       {#if q !== ""}
         <!-- Search results (flat) -->
         {#each searchResults as r (r.req.id)}
+          {@const lbl = requestLabel(r.req)}
           <button
             onclick={() => loadRequest(r.req, r.loc)}
             class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-panel-2"
             class:bg-panel-2={isActive(r.req)}
           >
-            <span class="w-11 shrink-0 text-10 font-bold tracking-wider {methodColor(r.req.method)}">
-              {r.req.method}
+            <span class="w-11 shrink-0 text-10 font-bold tracking-wider {methodColor(lbl)}">
+              {lbl}
             </span>
             <span class="min-w-0 flex-1">
               <span class="block truncate text-13 {r.req.deprecated ? 'text-ink-faint line-through' : 'text-ink-muted'}">
@@ -416,13 +418,14 @@
   {:else}
     <nav class="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
       {#each filteredHistory as h (h.id)}
+        {@const lbl = requestLabel(h.request)}
         <div class="group relative">
           <button
             onclick={() => loadRequest(h.request)}
             class="flex w-full items-center gap-2 rounded-md py-1.5 pr-8 pl-2 text-left transition-colors hover:bg-panel-2"
           >
-            <span class="w-11 shrink-0 text-10 font-bold tracking-wider {methodColor(h.request.method)}">
-              {h.request.method}
+            <span class="w-11 shrink-0 text-10 font-bold tracking-wider {methodColor(lbl)}">
+              {lbl}
             </span>
             <span class="min-w-0 flex-1">
               <span class="block truncate text-13 text-ink-muted">
@@ -592,6 +595,7 @@
         {/each}
         <ul class="space-y-0.5">
           {#each node.requests as req (req.id)}
+            {@const lbl = requestLabel(req)}
             <li
               class="group/req relative rounded-md {dropTarget === req.id
                 ? 'bg-brand/10 ring-1 ring-inset ring-brand/50'
@@ -607,8 +611,8 @@
                 class="flex w-full items-center gap-2 rounded-md py-1.5 pr-7 pl-2 text-left transition-colors hover:bg-panel-2"
                 class:bg-panel-2={isActive(req)}
               >
-                <span class="w-11 shrink-0 text-10 font-bold tracking-wider {methodColor(req.method)}">
-                  {req.method}
+                <span class="w-11 shrink-0 text-10 font-bold tracking-wider {methodColor(lbl)}">
+                  {lbl}
                 </span>
                 <span class="truncate text-13 {req.deprecated ? 'text-ink-faint line-through' : 'text-ink-muted'}">
                   {req.name}

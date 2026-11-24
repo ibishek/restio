@@ -2,6 +2,7 @@
 export { call } from "./client";
 export { getAppVersion } from "./app";
 export { getCookies, saveCookie, deleteCookie, clearCookies } from "./cookies";
+export { wsConnect, wsSend, wsDisconnect } from "./websocket";
 export { pickFile, pickDirectory, pickSaveFile } from "./dialog";
 export { openFile, openExternalUrl } from "./opener";
 export { sendRequest, cancelRequest } from "./requests";

@@ -339,6 +339,31 @@ rio.setEnv("fakePhone", faker.phone.number());
   }
 
   let methodOpen = $state(false);
+  let methodButtonEl = $state<HTMLButtonElement | null>(null);
+  let methodPos = $state<{ top: number; left: number } | null>(null);
+
+  function updateMethodPos() {
+    if (!methodButtonEl) return;
+    const r = methodButtonEl.getBoundingClientRect();
+    const dropdownHeight = 330;
+    const openUpwards =
+      r.bottom + dropdownHeight > window.innerHeight && r.top > dropdownHeight;
+    methodPos = {
+      top: openUpwards ? Math.max(8, r.top - dropdownHeight - 6) : r.bottom + 6,
+      left: r.left,
+    };
+  }
+
+  function toggleMethodMenu(e?: MouseEvent) {
+    e?.stopPropagation();
+    if (methodOpen) {
+      methodOpen = false;
+    } else {
+      updateMethodPos();
+      methodOpen = true;
+    }
+  }
+
   let saved = $state(false);
   let curlImported = $state(false);
   let codeOpen = $state(false);
@@ -364,12 +389,39 @@ rio.setEnv("fakePhone", faker.phone.number());
   const activeCount = (list: KeyValue[]) =>
     list.filter((r) => r.enabled && (r.key || r.value)).length;
 
+  const isWs = $derived(
+    tab.request.protocol === "websocket" ||
+      tab.request.url.startsWith("ws://") ||
+      tab.request.url.startsWith("wss://"),
+  );
+
   function pickMethod(m: HttpMethod) {
+    tab.request.protocol = "http";
     tab.request.method = m;
+    if (tab.request.url.startsWith("wss://")) {
+      tab.request.url = "https://" + tab.request.url.slice("wss://".length);
+    } else if (tab.request.url.startsWith("ws://")) {
+      tab.request.url = "http://" + tab.request.url.slice("ws://".length);
+    }
+    methodOpen = false;
+  }
+
+  function pickWs() {
+    tab.request.protocol = "websocket";
+    if (!tab.request.url.startsWith("ws://") && !tab.request.url.startsWith("wss://")) {
+      if (tab.request.url.startsWith("https://")) {
+        tab.request.url = "wss://" + tab.request.url.slice("https://".length);
+      } else if (tab.request.url.startsWith("http://")) {
+        tab.request.url = "ws://" + tab.request.url.slice("http://".length);
+      }
+    }
     methodOpen = false;
   }
 
   function onUrlInput() {
+    if (tab.request.url.startsWith("ws://") || tab.request.url.startsWith("wss://")) {
+      tab.request.protocol = "websocket";
+    }
     tab.request.params = syncParamsFromUrl(tab.request.url, tab.request.params, uid);
   }
 
@@ -395,9 +447,21 @@ rio.setEnv("fakePhone", faker.phone.number());
       send();
     }
   }
+
+  // Close method dropdown on active tab switch
+  $effect(() => {
+    const _ = tab.id;
+    methodOpen = false;
+  });
 </script>
 
-<svelte:window onclick={() => (methodOpen = false)} onkeydown={onWindowKey} />
+<svelte:window
+  onclick={() => (methodOpen = false)}
+  onkeydown={onWindowKey}
+  onresize={() => {
+    if (methodOpen) updateMethodPos();
+  }}
+/>
 
 <section class="flex min-h-0 flex-1 flex-col overflow-hidden">
   <!-- Request name -->
@@ -450,48 +514,19 @@ rio.setEnv("fakePhone", faker.phone.number());
   <div class="flex shrink-0 items-stretch gap-2 px-4 pb-3">
     <div class="relative">
       <button
-        onclick={(e) => {
-          e.stopPropagation();
-          methodOpen = !methodOpen;
-        }}
+        bind:this={methodButtonEl}
+        onclick={toggleMethodMenu}
         aria-haspopup="menu"
         aria-expanded={methodOpen}
-        class="flex h-10 items-center gap-2 rounded-lg border border-line bg-panel-2 px-3 font-mono text-sm font-bold {methodColor(
-          tab.request.method,
-        )} transition-colors hover:border-line-strong"
+        class="flex h-10 items-center gap-2 rounded-lg border border-line bg-panel-2 px-3 font-mono text-sm font-bold {isWs
+          ? 'text-purple-400'
+          : methodColor(tab.request.method)} transition-colors hover:border-line-strong"
       >
-        <span class="w-14 text-left">{tab.request.method}</span>
+        <span class="w-14 text-left">{isWs ? "WS" : tab.request.method}</span>
         <span class="text-ink-faint transition-transform" class:rotate-180={methodOpen}>
           <Icon name="chevron-down" size={14} />
         </span>
       </button>
-
-      {#if methodOpen}
-        <ul
-          role="menu"
-          class="absolute z-20 mt-1.5 w-40 overflow-hidden rounded-lg border border-line bg-panel shadow-2xl shadow-black/40"
-        >
-          {#each methods as m (m)}
-            <li role="none">
-              <button
-                role="menuitem"
-                onclick={(e) => {
-                  e.stopPropagation();
-                  pickMethod(m);
-                }}
-                class="flex w-full items-center gap-2 px-3 py-2 font-mono text-sm font-bold {methodColor(
-                  m,
-                )} transition-colors hover:bg-panel-2"
-              >
-                {m}
-                {#if m === tab.request.method}
-                  <span class="ml-auto text-brand"><Icon name="check" size={14} /></span>
-                {/if}
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
     </div>
 
     <div
@@ -511,7 +546,9 @@ rio.setEnv("fakePhone", faker.phone.number());
         oninput={onUrlInput}
         placeholder={pfx
           ? "path (appended to the prefix)"
-          : "https://api.example.com/endpoint — or paste a cURL command"}
+          : isWs
+            ? "ws://echo.websocket.events or wss://..."
+            : "https://api.example.com/endpoint — or paste a cURL command"}
         ariaLabel="Request URL"
         containerClass="h-full min-w-0 flex-1"
         class="bare-input h-full w-full bg-transparent py-2 pr-3.5 text-ink placeholder:text-ink-faint {pfx
@@ -520,7 +557,34 @@ rio.setEnv("fakePhone", faker.phone.number());
       />
     </div>
 
-    {#if tab.sending}
+    {#if isWs}
+      {#if tab.wsState === "connected"}
+        <button
+          onclick={() => send()}
+          class="flex h-10 items-center gap-2 rounded-lg border border-danger/50 bg-danger/10 px-5 text-sm font-semibold text-danger transition-all hover:bg-danger/20 active:scale-95"
+        >
+          <Icon name="x" size={16} />
+          Disconnect
+        </button>
+      {:else if tab.wsState === "connecting" || tab.wsState === "closing"}
+        <button
+          onclick={() => send()}
+          class="flex h-10 items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 px-5 text-sm font-semibold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-95"
+        >
+          <span class="size-4 animate-spin rounded-full border-2 border-amber-500/40 border-t-amber-400"></span>
+          {tab.wsState === "connecting" ? "Connecting" : "Closing"}
+        </button>
+      {:else}
+        <button
+          onclick={() => send()}
+          disabled={noUrl}
+          class="flex h-10 items-center gap-2 rounded-lg bg-purple-600 px-5 text-sm font-semibold text-white shadow-lg shadow-purple-600/20 transition-all hover:bg-purple-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Icon name="zap" size={16} />
+          Connect
+        </button>
+      {/if}
+    {:else if tab.sending}
       <button
         onclick={() => cancel()}
         class="flex h-10 items-center gap-2 rounded-lg border border-danger/50 bg-danger/10 px-5 text-sm font-semibold text-danger transition-all hover:bg-danger/20 active:scale-95"
@@ -833,6 +897,25 @@ rio.setEnv("fakePhone", faker.phone.number());
       </div>
     {:else if tab.reqTab === "settings"}
       <div class="max-w-xl space-y-4">
+        {#if isWs}
+          <div class="flex items-start justify-between gap-4 rounded-lg border border-purple-500/20 bg-purple-500/5 p-3.5">
+            <div>
+              <label for="ws-auto-reconnect" class="text-sm font-medium text-ink">
+                Auto-reconnect on connection drop
+              </label>
+              <p class="mt-0.5 text-xs text-ink-faint">
+                Automatically attempt to re-establish the WebSocket connection if the server drops unexpectedly.
+              </p>
+            </div>
+            <input
+              id="ws-auto-reconnect"
+              type="checkbox"
+              bind:checked={tab.wsAutoReconnect}
+              class="mt-1 size-4 accent-purple-500 cursor-pointer"
+            />
+          </div>
+        {/if}
+
         <div class="flex items-start justify-between gap-4 rounded-lg border border-line bg-panel p-3.5">
           <div>
             <label for="cookie-jar" class="text-sm font-medium text-ink">
@@ -915,6 +998,61 @@ rio.setEnv("fakePhone", faker.phone.number());
           </button>
         </li>
       {/each}
+    </ul>
+  {/if}
+
+  {#if methodOpen && methodPos}
+    <!-- Fixed backdrop to capture outside clicks -->
+    <button
+      type="button"
+      class="fixed inset-0 z-40 cursor-default bg-transparent"
+      onclick={() => (methodOpen = false)}
+      aria-label="Close method menu"
+    ></button>
+
+    <ul
+      role="menu"
+      style="position: fixed; left: {methodPos.left}px; top: {methodPos.top}px;"
+      class="z-50 w-44 max-h-[min(380px,calc(100vh-16px))] overflow-y-auto rounded-lg border border-line bg-panel py-1 shadow-2xl shadow-black/40"
+    >
+      {#each methods as m (m)}
+        <li role="none">
+          <button
+            role="menuitem"
+            onclick={(e) => {
+              e.stopPropagation();
+              pickMethod(m);
+            }}
+            class="flex w-full items-center gap-2 px-3 py-2 font-mono text-sm font-bold {methodColor(
+              m,
+            )} transition-colors hover:bg-panel-2 focus:bg-panel-2 focus:outline-none"
+          >
+            {m}
+            {#if !isWs && m === tab.request.method}
+              <span class="ml-auto text-brand"><Icon name="check" size={14} /></span>
+            {/if}
+          </button>
+        </li>
+      {/each}
+      <li role="none" class="my-1 border-t border-line"></li>
+      <li role="none">
+        <button
+          role="menuitem"
+          onclick={(e) => {
+            e.stopPropagation();
+            pickWs();
+          }}
+          class="flex w-full items-center justify-between px-3 py-2 font-mono text-sm font-bold text-purple-400 transition-colors hover:bg-panel-2 focus:bg-panel-2 focus:outline-none"
+        >
+          <span class="flex items-center gap-1.5">
+            <span>WS</span>
+            <span class="text-11 font-normal text-ink-faint">WebSocket</span>
+          </span>
+          {#if isWs}
+            <span class="text-purple-400"><Icon name="check" size={14} /></span>
+          {/if}
+        </button>
+      </li>
     </ul>
   {/if}
 </section>
