@@ -5,4 +5,5 @@ pub mod cookies;
 pub mod requests;
 pub mod sharing;
 pub mod store;
+pub mod websocket;
 pub mod workspace;

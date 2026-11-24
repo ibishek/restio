@@ -561,7 +561,32 @@
   <footer
     class="flex h-7 shrink-0 items-center gap-4 border-t border-line bg-panel/70 px-3 text-11 text-ink-faint backdrop-blur"
   >
-    {#if tab?.sending}
+    {#if tab?.kind === "request" && (tab.request.protocol === "websocket" || tab.request.url.trim().startsWith("ws://") || tab.request.url.trim().startsWith("wss://"))}
+      {#if tab.wsState === "connected"}
+        <span class="flex items-center gap-1.5 font-medium text-emerald-400">
+          <span class="size-1.5 rounded-full bg-emerald-400"></span>
+          Connected
+        </span>
+        <span class="tabular-nums">
+          ↓ {tab.wsMessages.filter((m) => m.direction === "in").length} / ↑ {tab.wsMessages.filter((m) => m.direction === "out").length} msgs
+        </span>
+      {:else if tab.wsState === "connecting"}
+        <span class="flex items-center gap-1.5 font-medium text-amber-400">
+          <span class="size-1.5 animate-pulse rounded-full bg-amber-400"></span>
+          Connecting…
+        </span>
+      {:else if tab.error}
+        <span class="flex items-center gap-1.5 text-danger" title={tab.error}>
+          <span class="size-1.5 rounded-full bg-danger"></span>
+          Connection failed
+        </span>
+      {:else}
+        <span class="flex items-center gap-1.5">
+          <span class="size-1.5 rounded-full bg-zinc-500"></span>
+          Disconnected
+        </span>
+      {/if}
+    {:else if tab?.sending}
       <span class="flex items-center gap-1.5 text-warn">
         <span class="size-1.5 animate-pulse rounded-full bg-warn"></span>
         Sending…

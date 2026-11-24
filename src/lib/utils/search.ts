@@ -12,7 +12,7 @@ export interface PaletteItem {
   subtitle?: string;
   badge?: string;
   badgeTone?: "brand" | "method" | "status" | "neutral" | "warn";
-  method?: HttpMethod;
+  method?: HttpMethod | string;
   statusCode?: number;
   shortcut?: string[];
   icon?: string;

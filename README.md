@@ -47,6 +47,7 @@ wire.
 - 🚀 **Full-power HTTP** — requests run in Rust (`reqwest`); set any header, hit any host, no CORS limits
 - ⚡ **SSE & LLM Stream Viewer** — real-time Server-Sent Events (`text/event-stream`) inspector with dual views: auto-token accumulator for OpenAI, Anthropic, Gemini, Ollama, and DeepSeek, plus a filterable chronological SSE event timeline with TTFT and throughput metrics
 - 🍪 **Automatic Cookie Jar & Session Persistence** — zero-config `Set-Cookie` capturing and RFC 6265 domain/path matching persisted per-workspace in SQLite, with an interactive cookie manager and response cookies inspector
+- 📡 **WebSocket Client (`ws://`, `wss://`)** — native bidirectional real-time client powered by `tokio-tungstenite` with frame inspection (inbound/outbound/ping/pong), JSON/text/binary composers, auto-reconnect, and live RTT latency tracking
 - 🛑 **Cancellable** — abort in-flight requests at any time with native abort handles
 - 📁 **Collections & Workspaces** — organize requests with nested folders and base URL inheritance
 - 🤝 **Git-backed Sharing** — publish, pull, and collaborate on collections via Git without leaking secrets

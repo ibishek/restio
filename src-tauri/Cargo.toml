@@ -41,7 +41,7 @@ reqwest = { version = "0.12", default-features = false, features = [
 ] }
 thiserror = "2"
 # `fs` for async file reads when attaching binary / multipart-file bodies.
-tokio = { version = "1", features = ["rt", "fs"] }
+tokio = { version = "1", features = ["rt", "fs", "sync", "time", "macros"] }
 # Direct dep (also in reqwest's tree) for correct x-www-form-urlencoded encoding.
 url = "2"
 base64 = "0.23"
@@ -50,6 +50,8 @@ base64 = "0.23"
 # compiles SQLite from source so there's no system-library dependency.
 rusqlite = { version = "0.43", features = ["bundled"] }
 cookie = "0.18"
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }

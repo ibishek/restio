@@ -8,6 +8,7 @@
   import { highlightJson } from "#lib/utils/highlight";
   import ServerTimingViewer from "./ServerTimingViewer.svelte";
   import StreamViewer from "./StreamViewer/StreamViewer.svelte";
+  import WebSocketPane from "./WebSocketPane.svelte";
   import { summarizeServerTiming } from "#lib/utils/serverTiming";
   import {
     activeTab,
@@ -56,6 +57,12 @@
 
   const currentResponse = $derived<HttpResponse | SavedResponse | null>(
     activeExample ?? tab.response,
+  );
+
+  const isWs = $derived(
+    tab.request.protocol === "websocket" ||
+      tab.request.url.startsWith("ws://") ||
+      tab.request.url.startsWith("wss://"),
   );
 
   const timingSummary = $derived.by(() =>
@@ -314,7 +321,10 @@
 </script>
 
 <section class="flex min-h-0 w-full min-w-0 flex-1 flex-col bg-canvas/40">
-  <header class="flex shrink-0 items-center gap-3 px-4 py-2.5">
+  {#if isWs}
+    <WebSocketPane {tab} />
+  {:else}
+    <header class="flex shrink-0 items-center gap-3 px-4 py-2.5">
     <div class="flex items-center gap-2">
       <h3 class="text-xs font-semibold tracking-wide text-ink-muted uppercase">Response</h3>
 
@@ -1002,5 +1012,6 @@
         {/if}
       {/if}
     </div>
+  {/if}
   {/if}
 </section>

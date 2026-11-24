@@ -14,6 +14,8 @@ import type {
   SseEvent,
   StreamMetrics,
   TestResult,
+  WsConnectionState,
+  WsMessageItem,
 } from "#lib/types";
 
 /** Where a request lives in the collection tree — used to resolve its base URL
@@ -58,6 +60,16 @@ export interface Tab {
   isStreaming: boolean;
   /** Live metrics for stream throughput, token counts, and TTFT. */
   streamMetrics: StreamMetrics;
+  /** WebSocket connection state. */
+  wsState: WsConnectionState;
+  /** WebSocket message history for this tab. */
+  wsMessages: WsMessageItem[];
+  /** Round-trip time (ms) for the latest Ping/Pong exchange. */
+  wsLastPingRttMs: number | null;
+  /** Timestamp when WebSocket connected. */
+  wsConnectedAt: number | null;
+  /** Auto-reconnect toggle on connection drop. */
+  wsAutoReconnect: boolean;
 }
 
 /** A pending confirmation prompt (unsaved-changes guard). `onConfirm` is the
@@ -118,6 +130,7 @@ export function makeRequest(
   method: HttpMethod,
   url: string,
   opts: {
+    protocol?: "http" | "websocket";
     bodyMode?: BodyMode;
     body?: string;
     headers?: KeyValue[];
@@ -126,10 +139,12 @@ export function makeRequest(
     savedResponses?: SavedResponse[];
   } = {},
 ): HttpRequest {
+  const isWs = opts.protocol === "websocket" || url.startsWith("ws://") || url.startsWith("wss://");
   return {
     id: uid(),
     name,
     method,
+    protocol: isWs ? "websocket" : (opts.protocol ?? "http"),
     url,
     params: [kv()],
     headers: [...(opts.headers ?? defaultHeaders()), kv()],
@@ -153,8 +168,11 @@ export function makeRequest(
  *  would choke on. Leaves a trailing blank row to type into. */
 export function normalizeRequest(req: HttpRequest): HttpRequest {
   const headers = (req.headers ?? []).filter((h) => !isContentLength(h.key));
+  const isWs =
+    req.protocol === "websocket" || req.url?.startsWith("ws://") || req.url?.startsWith("wss://");
   return {
     ...req,
+    protocol: isWs ? "websocket" : (req.protocol ?? "http"),
     headers: headers.length ? headers : [kv()],
     auth: req.auth ? { ...defaultAuth(), ...req.auth } : defaultAuth(),
     formFields: req.formFields?.length ? req.formFields : [kv()],
@@ -242,5 +260,10 @@ export function makeTab(request: HttpRequest, location: RequestLocation | null):
     streamText: "",
     isStreaming: false,
     streamMetrics: defaultStreamMetrics(),
+    wsState: "disconnected",
+    wsMessages: [],
+    wsLastPingRttMs: null,
+    wsConnectedAt: null,
+    wsAutoReconnect: false,
   };
 }

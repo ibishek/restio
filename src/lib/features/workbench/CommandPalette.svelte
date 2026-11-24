@@ -15,8 +15,10 @@
     createCollection,
     loadRequest,
     methodColor,
+    requestLabel,
     newRequest,
     newSseRequest,
+    newWsRequest,
     openCookieManager,
     openRunner,
     paletteState,
@@ -137,6 +139,15 @@
         icon: "zap",
         keywords: ["sse", "stream", "streaming", "eventsource", "llm", "event-stream", "new"],
         action: () => newSseRequest(),
+      },
+      {
+        id: "cmd-new-ws-request",
+        category: "commands",
+        title: "New WebSocket request",
+        subtitle: "Create a request pre-configured for WebSocket communication (ws:// or wss://)",
+        icon: "globe",
+        keywords: ["ws", "wss", "websocket", "socket", "realtime", "stream", "new"],
+        action: () => newWsRequest(),
       },
       {
         id: "cmd-add-sse-headers",
@@ -293,31 +304,33 @@
     // 2. All Collection Requests (Flattened)
     const flattened = flattenRequests(wb.collections);
     for (const f of flattened) {
+      const lbl = requestLabel(f.req);
       items.push({
         id: `req-${f.req.id}`,
         category: "requests",
         title: f.req.name || f.req.url,
         subtitle: `${f.trail} · ${f.req.url || "(no url)"}`,
-        method: f.req.method,
-        badge: f.req.method,
+        method: lbl,
+        badge: lbl,
         badgeTone: "method",
-        keywords: [f.req.method, f.req.url, f.trail],
+        keywords: [lbl, f.req.method, f.req.url, f.trail],
         action: () => loadRequest(f.req, f.loc),
       });
     }
 
     // 3. Request History
     for (const h of wb.history) {
+      const lbl = requestLabel(h.request);
       items.push({
         id: `hist-${h.id}`,
         category: "history",
         title: h.request.name || h.request.url,
         subtitle: `${h.request.url} · ${h.ok ? `${h.status} OK` : "Error"} · ${h.timeMs}ms · ${relTime(h.at)}`,
-        method: h.request.method,
+        method: lbl,
         badge: h.ok ? String(h.status) : "ERR",
         badgeTone: "status",
         statusCode: h.status ?? undefined,
-        keywords: [h.request.method, h.request.url, String(h.status)],
+        keywords: [lbl, h.request.method, h.request.url, String(h.status)],
         action: () => loadRequest(h.request),
       });
     }

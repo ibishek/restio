@@ -52,6 +52,8 @@ export interface HttpRequest {
   id: string;
   name: string;
   method: HttpMethod;
+  /** Request protocol: HTTP (default) or WebSocket. */
+  protocol?: "http" | "websocket";
   url: string;
   params: KeyValue[];
   headers: KeyValue[];
@@ -170,6 +172,52 @@ export interface StreamMetrics {
   durationMs: number;
   ttftMs: number | null;
 }
+
+export type WsConnectionState = "disconnected" | "connecting" | "connected" | "closing";
+
+export interface WsMessageItem {
+  id: string;
+  direction: "in" | "out";
+  kind: "text" | "binary" | "ping" | "pong";
+  data: string;
+  sizeBytes: number;
+  timestampMs: number;
+  latencyMs?: number;
+}
+
+export interface WsOutboundMessage {
+  kind: "text" | "binary" | "ping";
+  data: string;
+}
+
+export type WsEvent =
+  | { type: "connected"; connectionId: string; url: string; timestampMs: number }
+  | {
+      type: "message";
+      connectionId: string;
+      direction: "in" | "out";
+      kind: "text" | "binary";
+      data: string;
+      sizeBytes: number;
+      timestampMs: number;
+    }
+  | { type: "ping"; connectionId: string; direction: "in" | "out"; timestampMs: number }
+  | {
+      type: "pong";
+      connectionId: string;
+      direction: "in" | "out";
+      latencyMs?: number;
+      timestampMs: number;
+    }
+  | {
+      type: "closed";
+      connectionId: string;
+      code?: number;
+      reason?: string;
+      clean: boolean;
+      timestampMs: number;
+    }
+  | { type: "error"; connectionId: string; message: string; timestampMs: number };
 
 export interface RunnerItem {
   id: string;

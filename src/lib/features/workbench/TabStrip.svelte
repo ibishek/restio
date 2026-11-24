@@ -11,6 +11,7 @@
     tabTitle,
     isTabDirty,
     methodColor,
+    requestLabel,
   } from "./state.svelte";
 
   // Right-click context menu, anchored at the cursor.
@@ -57,8 +58,9 @@
               class="shrink-0 text-ink-faint"
             />
           {:else}
-            <span class="shrink-0 text-10 font-bold tracking-wider {methodColor(t.request.method)}">
-              {t.request.method}
+            {@const lbl = requestLabel(t.request)}
+            <span class="shrink-0 text-10 font-bold tracking-wider {methodColor(lbl)}">
+              {lbl}
             </span>
           {/if}
           <span class="min-w-0 truncate {t.kind === 'request' && t.request.deprecated ? 'text-ink-faint line-through' : ''}">

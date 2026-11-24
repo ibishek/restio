@@ -60,6 +60,7 @@ export {
   isTabDirty,
   newRequest,
   newSseRequest,
+  newWsRequest,
   newTab,
   requestCloseOthers,
   requestCloseTab,
@@ -122,10 +123,16 @@ export {
   removeMultipart,
   removeRow,
   renameSavedResponse,
+  requestLabel,
   saveResponseAsExample,
   send,
   setActiveExample,
   statusTone,
+  connectWebSocket,
+  disconnectWebSocket,
+  sendWebSocketMessage,
+  sendWebSocketPing,
+  clearWebSocketMessages,
 } from "./stores/actions.svelte";
 
 export {
